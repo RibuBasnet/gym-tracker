@@ -328,6 +328,13 @@
   .modal-actions .confirm{background:var(--accent);border-color:var(--accent);color:#fff;}
   .modal-actions button:hover{opacity:.9;}
 
+  /* ---- Backup ---- */
+  .backup-actions{display:flex;gap:10px;margin-top:12px;}
+  .backup-actions .reset{flex:1;}
+  .backup-hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px;}
+  .modal-actions.stack{flex-direction:column;}
+  .modal p.left{text-align:left;}
+
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
 </head>
@@ -369,7 +376,7 @@
       <div class="bw-latest" id="bwLatest"></div>
 
       <div class="chart-block">
-        <div class="chart-title">Body composition</div>
+        <div class="chart-title">Body composition chart</div>
         <div class="legend" id="bodyLegend"></div>
         <div class="chart" id="bodyChart"></div>
       </div>
@@ -384,6 +391,16 @@
         <button class="add-set" id="bwAdd">Add entry</button>
       </div>
       <div class="bw-list" id="bwList"></div>
+    </div>
+
+    <div class="pcard">
+      <div class="board-label">DATA / BACKUP</div>
+      <div class="backup-actions">
+        <button class="reset" id="exportBtn">Export</button>
+        <button class="reset" id="importBtn">Import</button>
+      </div>
+      <div class="backup-hint">Export saves all your data to a file you keep in Files or iCloud. Import brings it back after a reinstall or on a new phone. Nothing ever leaves your device.</div>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
   </div>
 
@@ -443,6 +460,18 @@
       <div class="modal-actions">
         <button id="cancelBtn">Cancel</button>
         <button class="confirm" id="confirmBtn">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="importOverlay">
+    <div class="modal">
+      <h2>Import backup</h2>
+      <p class="left" id="importMsg"></p>
+      <div class="modal-actions stack">
+        <button class="confirm" id="importMerge">Merge — keep everything</button>
+        <button id="importReplace">Replace — use only backup</button>
+        <button id="importCancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -1248,6 +1277,95 @@ unitToggle.querySelectorAll('button').forEach(b=>{
   b.onclick=()=>{ state.unit=b.dataset.u; save(); paintUnit(); render();
     if(!document.getElementById('progressView').hidden) renderProgress(); };
 });
+
+/* ---------- Backup: export / import ---------- */
+function backupFilename(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return 'training-ledger-backup-'+d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'.json';
+}
+async function exportData(){
+  let raw;
+  try{ raw=await storeGet(STORE_KEY); }catch(e){}
+  if(!raw){ try{ raw=JSON.stringify(state); }catch(e){ raw='{}'; } }
+  let dataObj; try{ dataObj=JSON.parse(raw); }catch(e){ dataObj=state; }
+  const payload=JSON.stringify({app:'training-ledger',version:1,exportedAt:new Date().toISOString(),data:dataObj},null,2);
+  const fname=backupFilename();
+  const blob=new Blob([payload],{type:'application/json'});
+  try{
+    const file=new File([blob],fname,{type:'application/json'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'Training Ledger backup'});
+      return;
+    }
+  }catch(e){ if(e && e.name==='AbortError') return; }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=fname; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },1000);
+}
+function deviceHasData(){
+  return (state.bodyweight&&state.bodyweight.length>0)
+    || (state.history&&Object.keys(state.history).length>0)
+    || (state.logs&&Object.keys(state.logs).length>0);
+}
+// Merge = keep everything on the device, add back only what the backup has that's missing.
+function mergeData(inc){
+  const cur=state.bodyweight||[]; const dates=new Set(cur.map(e=>e.d));
+  (inc.bodyweight||[]).forEach(e=>{ if(!dates.has(e.d)){ cur.push(e); dates.add(e.d); } });
+  cur.sort((a,b)=> a.d<b.d?-1:(a.d>b.d?1:0)); state.bodyweight=cur;
+  state.history=state.history||{}; const ih=inc.history||{};
+  Object.keys(ih).forEach(k=>{ if(!(k in state.history)) state.history[k]=ih[k]; });
+  if(inc.weekId && inc.weekId===state.weekId){
+    state.logs=state.logs||{}; const il=inc.logs||{};
+    Object.keys(il).forEach(k=>{ if(!(k in state.logs)) state.logs[k]=il[k]; });
+    state.checks=state.checks||{}; const ic=inc.checks||{};
+    Object.keys(ic).forEach(k=>{ if(!(k in state.checks)) state.checks[k]=ic[k]; });
+  }
+}
+function applyImport(inc,mode){
+  if(mode==='replace'){
+    state=inc;
+    state.checks=state.checks||{}; state.logs=state.logs||{}; state.unit=state.unit||'kg';
+    state.history=state.history||{}; state.bodyweight=state.bodyweight||[];
+    if(!state.defaultRoutine) state.defaultRoutine=seedDefault();
+    if(!state.routine) state.routine=deepCopy(state.defaultRoutine);
+    ROUTINE=state.routine;
+  } else { mergeData(inc); }
+  save(); paintUnit(); render(); renderProgress();
+}
+let pendingImport=null;
+const importOverlay=document.getElementById('importOverlay');
+function startImport(inc){
+  if(!deviceHasData()){ applyImport(inc,'replace'); alert('Backup restored.'); return; }
+  pendingImport=inc;
+  const bwN=(inc.bodyweight||[]).length;
+  const hN=inc.history?Object.keys(inc.history).length:0;
+  document.getElementById('importMsg').textContent=
+    'This device already has data. The backup holds '+bwN+' body entr'+(bwN===1?'y':'ies')+' and '+hN+' past week'+(hN===1?'':'s')+'. Merge keeps everything currently on this device and adds anything the backup has that\u2019s missing \u2014 nothing is removed. Replace wipes what\u2019s here and uses only the backup.';
+  importOverlay.classList.add('show');
+}
+document.getElementById('exportBtn').onclick=exportData;
+const importFile=document.getElementById('importFile');
+document.getElementById('importBtn').onclick=()=>importFile.click();
+importFile.onchange=()=>{
+  const f=importFile.files&&importFile.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    let parsed;
+    try{ parsed=JSON.parse(reader.result); }catch(e){ alert('That file isn\u2019t a valid backup \u2014 it couldn\u2019t be read.'); importFile.value=''; return; }
+    const inc=(parsed && parsed.data)?parsed.data:parsed;
+    const looksValid=inc && typeof inc==='object' &&
+      (('bodyweight'in inc)||('logs'in inc)||('history'in inc)||('routine'in inc));
+    if(!looksValid){ alert('That file doesn\u2019t look like a Training Ledger backup.'); importFile.value=''; return; }
+    importFile.value=''; startImport(inc);
+  };
+  reader.onerror=()=>{ alert('Couldn\u2019t read that file.'); importFile.value=''; };
+  reader.readAsText(f);
+};
+document.getElementById('importMerge').onclick=()=>{ if(pendingImport){ applyImport(pendingImport,'merge'); pendingImport=null; } importOverlay.classList.remove('show'); alert('Backup merged \u2014 nothing was removed.'); };
+document.getElementById('importReplace').onclick=()=>{ if(pendingImport){ applyImport(pendingImport,'replace'); pendingImport=null; } importOverlay.classList.remove('show'); alert('Data replaced with the backup.'); };
+document.getElementById('importCancel').onclick=()=>{ pendingImport=null; importOverlay.classList.remove('show'); };
+importOverlay.onclick=e=>{ if(e.target===importOverlay){ pendingImport=null; importOverlay.classList.remove('show'); } };
 
 (async()=>{
   await load();
