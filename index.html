@@ -1257,5 +1257,37 @@ unitToggle.querySelectorAll('button').forEach(b=>{
   render();
 })();
 </script>
+<script>
+/* Service-worker registration + auto-update.
+   On a controlled page, when a new worker takes over we reload once so the
+   newest version shows without deleting/re-adding the Home-Screen app. */
+if ('serviceWorker' in navigator) {
+  if (navigator.serviceWorker.controller) {
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloaded) return;
+      reloaded = true;
+      location.reload();
+    });
+  }
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      reg.update().catch(() => {});
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update().catch(() => {});
+      });
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            nw.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      });
+    }).catch(() => {});
+  });
+}
+</script>
 </body>
 </html>
