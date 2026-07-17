@@ -1,5 +1,7 @@
 # gym-tracker
 
-A personal workout tracker web app — routine, set logging, progress & body-composition charts, and editable exercise guides.
+Personal workout tracker.
 
-Live: https://ribubasnet.github.io/gym-tracker/
+Live app: https://ribubasnet.github.io/gym-tracker/
+
+Updates are deployed here directly.
