@@ -1968,7 +1968,14 @@ async function startScan(){
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ scanFail('This browser can’t open the camera here. Try Add manually or Search online.'); return; }
   try{ await loadScanLib(); }catch(e){ scanFail('Couldn’t load the scanner. Check your connection and try again.'); return; }
   try{ scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}); }
-  catch(e){ scanFail('Camera unavailable or permission denied. Allow camera access in your browser settings, or use Add manually.'); return; }
+  catch(e){
+    if(e && (e.name==='NotAllowedError'||e.name==='SecurityError')){
+      scanFail('Camera access is blocked. To turn it back on:<br>• Safari: tap “aA” in the address bar → Website Settings → Camera → Allow, then reload the page.<br>• Home-Screen app: fully close it (swipe away in the app switcher) and reopen — or enable Camera for it in iOS Settings.<br>Meanwhile you can still use “+ Add manually” or “+ Add from online”.');
+    } else {
+      scanFail('Camera unavailable on this device. You can still use “+ Add manually” or “+ Add from online”.');
+    }
+    return;
+  }
   const video=document.getElementById('scanVideo');
   video.srcObject=scanStream; try{ await video.play(); }catch(e){}
   try{ scanDetector=new window.BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']}); }
