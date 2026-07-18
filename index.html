@@ -1824,7 +1824,7 @@ async function fetchJSON(url){
 async function fetchOFF(q){
   const fields='product_name,brands,nutriments,code';
   try{
-    const d=await fetchJSON('https://search.openfoodfacts.org/search?q='+encodeURIComponent(q)+'&page_size=20&fields='+fields+'&lang=en');
+    const d=await fetchJSON('https://search.openfoodfacts.org/search?q='+encodeURIComponent(q)+'&page_size=20&fields='+fields+'&langs=en');
     const arr=d.hits||d.products||[]; if(arr.length) return arr;
   }catch(e){}
   const d=await fetchJSON('https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=20&fields='+fields);
@@ -1862,7 +1862,7 @@ async function searchOnline(){
       };
       box.appendChild(row);
     });
-  }catch(e){ box.innerHTML='<div class="sf-empty">Couldn\u2019t reach the food database right now. Try again, or add the food manually below.</div>'; }
+  }catch(e){ box.innerHTML='<div class="sf-empty">Open Food Facts\u2019 online search is unavailable right now — that\u2019s a problem on their servers, not this app. Your saved foods and “+ Add manually” work normally, and searching should work again once their service is back.</div>'; }
 }
 document.getElementById('onlineBtn').onclick=searchOnline;
 
