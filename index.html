@@ -420,6 +420,12 @@
   .online-search-row{display:flex;gap:8px;margin-bottom:12px;}
   .online-search-row .focus-input{flex:1;}
   .online-search-row .sf-add{padding:0 16px;}
+  .search-wrap{position:relative;display:flex;flex:1;}
+  .search-wrap input{flex:1;padding-right:36px;}
+  .search-clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;
+    color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;display:none;}
+  .search-clear.show{display:block;}
+  .search-clear:hover{color:var(--accent);}
   #addConfirmOverlay{z-index:60;}
 
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
@@ -477,10 +483,13 @@
 
     <div class="pcard">
       <div class="board-label">Your saved foods</div>
-      <input class="focus-input diet-search" id="foodSearch" type="text" placeholder="Search your saved foods…">
+      <div class="search-wrap">
+        <input class="focus-input diet-search" id="foodSearch" type="text" placeholder="Search your saved foods…">
+        <button class="search-clear" id="foodSearchClear" aria-label="Clear search">×</button>
+      </div>
       <div class="food-add-btns">
         <button class="add-set" id="manualBtn">+ Add manually</button>
-        <button class="add-set" id="onlineOpenBtn">Search online</button>
+        <button class="add-set" id="onlineOpenBtn">+ Add from online</button>
       </div>
       <div class="saved-foods" id="savedFoods"></div>
     </div>
@@ -665,7 +674,10 @@
     <div class="modal goal-modal">
       <h2>Search online</h2>
       <div class="online-search-row">
-        <input class="focus-input" id="onlineQuery" type="text" placeholder="Type a food name…">
+        <div class="search-wrap">
+          <input class="focus-input" id="onlineQuery" type="text" placeholder="Type a food name…">
+          <button class="search-clear" id="onlineQueryClear" aria-label="Clear search">×</button>
+        </div>
         <button class="sf-add" id="onlineGo">Search</button>
       </div>
       <div class="online-results" id="onlineResults"></div>
@@ -1846,6 +1858,16 @@ document.getElementById('onlineClose').onclick=()=>onlineOverlay.classList.remov
 onlineOverlay.onclick=function(e){ if(e.target===onlineOverlay) onlineOverlay.classList.remove('show'); };
 document.getElementById('onlineGo').onclick=searchOnline;
 
+function wireSearchClear(inputId, clearId, onClear){
+  const inp=document.getElementById(inputId), clr=document.getElementById(clearId);
+  function upd(){ clr.classList.toggle('show', !!inp.value); }
+  inp.addEventListener('input', upd);
+  clr.onclick=function(){ inp.value=''; upd(); if(onClear) onClear(); inp.focus(); };
+  upd();
+}
+wireSearchClear('foodSearch','foodSearchClear', renderSavedFoods);
+wireSearchClear('onlineQuery','onlineQueryClear', function(){ document.getElementById('onlineResults').innerHTML='<div class="sf-empty">Type a food name and tap Search.</div>'; });
+
 let pendingAdd=null;
 function askAddConfirm(food, amount, unit){
   pendingAdd={food:food, amount:amount, unit:unit};
@@ -1864,6 +1886,7 @@ document.getElementById('addConfirmOk').onclick=function(){
   }
   addConfirmOverlay.classList.remove('show');
   manualOverlay.classList.remove('show');
+  onlineOverlay.classList.remove('show');
   renderSavedFoods();
 };
 document.querySelectorAll('.water-btns button[data-ml]').forEach(b=>b.onclick=()=>addWater(parseInt(b.dataset.ml,10)));
