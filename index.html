@@ -412,6 +412,8 @@
   .nf-amt{display:flex;gap:8px;flex:1;}
   .nf-amt .amt-val{flex:1;}
   .diet-foot{margin-top:24px;display:flex;justify-content:center;}
+  .sub-label{font-family:"Oswald",sans-serif;font-weight:600;font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin:14px 0 2px;}
   .reset:disabled{opacity:.4;cursor:default;}
 
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
@@ -469,11 +471,13 @@
 
     <div class="pcard">
       <div class="board-label">ADD FOOD</div>
-      <input class="focus-input diet-search" id="foodSearch" type="text" placeholder="Search your foods…">
+      <div class="diet-hint">Search your saved foods, look it up online, or add it manually.</div>
+      <input class="focus-input diet-search" id="foodSearch" type="text" placeholder="Type a food name…">
+      <div class="sub-label">Your foods</div>
       <div class="saved-foods" id="savedFoods"></div>
-      <button class="reset online-btn" id="onlineBtn">Search online food database</button>
+      <button class="reset online-btn" id="onlineBtn">Search online database</button>
       <div class="online-results" id="onlineResults"></div>
-      <button class="add-set" id="newFoodBtn">+ New food</button>
+      <button class="add-set" id="newFoodBtn">+ Add manually</button>
       <div class="newfood-form" id="newFoodForm" hidden>
         <input class="focus-input" id="nfName" type="text" placeholder="Food name">
         <div class="goal-seg" id="nfBasis">
@@ -1665,7 +1669,7 @@ function renderSavedFoods(){
   let list=(state.foods||[]).slice();
   if(q) list=list.filter(f=>(f.name||'').toLowerCase().indexOf(q)!==-1);
   list.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
-  if(!list.length){ box.innerHTML='<div class="sf-empty">'+(q?'No saved food matches.':'No saved foods yet — add one below and it\u2019s saved here for one-tap logging.')+'</div>'; return; }
+  if(!list.length){ box.innerHTML='<div class="sf-empty">'+(q?('No saved food matches “'+escapeHtml(q)+'”. Try searching online below, or “+ Add manually”.'):'No saved foods yet. Search online or “+ Add manually” — anything you add is saved here for one-tap logging next time.')+'</div>'; return; }
   box.innerHTML='';
   list.forEach(function(f){
     const row=document.createElement('div'); row.className='sf-row';
@@ -1761,7 +1765,13 @@ document.getElementById('goalSave').onclick=function(){
   save(); goalOverlay.classList.remove('show'); renderDiet();
 };
 
-document.getElementById('foodSearch').addEventListener('input',renderSavedFoods);
+function onFoodSearchInput(){
+  renderSavedFoods();
+  const q=(document.getElementById('foodSearch').value||'').trim();
+  const short=q.length>22?q.slice(0,22)+'…':q;
+  document.getElementById('onlineBtn').textContent = q ? ('Search online for “'+short+'”') : 'Search online database';
+}
+document.getElementById('foodSearch').addEventListener('input',onFoodSearchInput);
 const newFoodForm=document.getElementById('newFoodForm');
 document.getElementById('newFoodBtn').onclick=()=>{ newFoodForm.hidden=!newFoodForm.hidden; if(!newFoodForm.hidden) renderNfAmount(); };
 document.getElementById('nfCancel').onclick=()=>{ newFoodForm.hidden=true; };
