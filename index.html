@@ -417,8 +417,10 @@
   .sub-label{font-family:"Oswald",sans-serif;font-weight:600;font-size:10px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--muted);margin:14px 0 2px;}
   .reset:disabled{opacity:.4;cursor:default;}
-  .food-add-btns{display:flex;gap:10px;margin:12px 0 4px;}
-  .food-add-btns .add-set{flex:1;}
+  .food-add-btns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px;}
+  .food-add-btns .add-set{flex:1 1 calc(50% - 4px);min-width:0;padding-left:8px;padding-right:8px;}
+  .scan-wrap{position:relative;width:100%;aspect-ratio:4/3;background:#000;border-radius:12px;overflow:hidden;margin-bottom:12px;}
+  #scanVideo{width:100%;height:100%;object-fit:cover;display:block;}
   .online-search-row{display:flex;gap:8px;margin-bottom:12px;}
   .online-search-row .focus-input{flex:1;}
   .online-search-row .sf-add{padding:0 16px;}
@@ -494,6 +496,7 @@
       <div class="food-add-btns">
         <button class="add-set" id="manualBtn">+ Add manually</button>
         <button class="add-set" id="onlineOpenBtn">+ Add from online</button>
+        <button class="add-set" id="scanBtn">Scan barcode</button>
       </div>
       <div class="saved-foods" id="savedFoods"></div>
     </div>
@@ -645,6 +648,18 @@
       <div class="modal-actions">
         <button id="clearDayCancel">Cancel</button>
         <button class="confirm" id="clearDayConfirm">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="scanOverlay">
+    <div class="modal goal-modal">
+      <h2>Scan barcode</h2>
+      <div class="scan-wrap"><video id="scanVideo" playsinline autoplay muted></video></div>
+      <div class="sf-empty" id="scanStatus">Point your camera at a product barcode.</div>
+      <div class="online-results" id="scanResults"></div>
+      <div class="modal-actions">
+        <button id="scanClose">Close</button>
       </div>
     </div>
   </div>
@@ -1901,6 +1916,87 @@ document.getElementById('onlineClose').onclick=()=>onlineOverlay.classList.remov
 onlineOverlay.onclick=function(e){ if(e.target===onlineOverlay) onlineOverlay.classList.remove('show'); };
 document.getElementById('onlineGo').onclick=searchOnline;
 
+/* ---- barcode scanning (Open Food Facts product lookup) ---- */
+const scanOverlay=document.getElementById('scanOverlay');
+let scanStream=null, scanTimer=null, scanDetector=null, scanLibPromise=null;
+function loadScanLib(){
+  if(window.BarcodeDetector) return Promise.resolve();
+  if(scanLibPromise) return scanLibPromise;
+  scanLibPromise=new Promise(function(res,rej){
+    const s=document.createElement('script');
+    s.src='https://fastly.jsdelivr.net/npm/barcode-detector@3/dist/iife/polyfill.min.js';
+    s.onload=function(){ res(); }; s.onerror=function(){ rej(new Error('lib')); };
+    document.head.appendChild(s);
+  });
+  return scanLibPromise;
+}
+function stopCamera(){
+  if(scanTimer){ clearInterval(scanTimer); scanTimer=null; }
+  if(scanStream){ scanStream.getTracks().forEach(function(t){ t.stop(); }); scanStream=null; }
+  const v=document.getElementById('scanVideo'); if(v) v.srcObject=null;
+}
+async function lookupBarcode(code){
+  const d=await fetchJSON('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(code)+'.json?fields=product_name,brands,nutriments');
+  if(d && d.status===1 && d.product) return offToFood(d.product);
+  return null;
+}
+function scanFail(msg){
+  const box=document.getElementById('scanResults');
+  document.getElementById('scanStatus').textContent='';
+  box.innerHTML='<div class="sf-empty">'+msg+'</div><button class="sf-add" id="scanAgain" style="margin-top:10px">Scan again</button>';
+  document.getElementById('scanAgain').onclick=startScan;
+}
+function renderScanResult(food){
+  document.getElementById('scanStatus').textContent='';
+  const box=document.getElementById('scanResults');
+  const row=document.createElement('div'); row.className='sf-row';
+  row.innerHTML='<div class="sf-info"><div class="sf-name">'+escapeHtml(food.name)+'</div>'+
+    '<div class="sf-sub">'+food.kcal+' kcal &middot; P'+food.p+' C'+food.c+' F'+food.f+' / 100 g</div></div>'+
+    amountControl({basis:'g'})+'<button class="sf-add">+ Add</button>';
+  row.querySelector('.sf-add').onclick=function(){
+    const a=readAmount(row);
+    askAddConfirm({id:uid(), name:food.name, basis:'g', kcal:food.kcal, p:food.p, c:food.c, f:food.f}, a.amount, a.unit);
+  };
+  box.appendChild(row);
+  const again=document.createElement('button'); again.className='sf-add'; again.style.marginTop='10px'; again.textContent='Scan another';
+  again.onclick=startScan; box.appendChild(again);
+}
+async function startScan(){
+  const status=document.getElementById('scanStatus');
+  document.getElementById('scanResults').innerHTML='';
+  status.textContent='Starting camera…';
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ scanFail('This browser can’t open the camera here. Try Add manually or Search online.'); return; }
+  try{ await loadScanLib(); }catch(e){ scanFail('Couldn’t load the scanner. Check your connection and try again.'); return; }
+  try{ scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}); }
+  catch(e){ scanFail('Camera unavailable or permission denied. Allow camera access in your browser settings, or use Add manually.'); return; }
+  const video=document.getElementById('scanVideo');
+  video.srcObject=scanStream; try{ await video.play(); }catch(e){}
+  try{ scanDetector=new window.BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']}); }
+  catch(e){ try{ scanDetector=new window.BarcodeDetector(); }catch(e2){ scanFail('Scanner not supported on this device. Use Add manually or Search online.'); return; } }
+  status.textContent='Point your camera at a product barcode…';
+  let busy=false;
+  scanTimer=setInterval(async function(){
+    if(busy || !scanDetector || !video.videoWidth) return; busy=true;
+    try{
+      const codes=await scanDetector.detect(video);
+      if(codes && codes.length){
+        const code=codes[0].rawValue;
+        stopCamera();
+        status.textContent='Found '+code+' — looking it up…';
+        try{
+          const food=await lookupBarcode(code);
+          if(!food || !(food.kcal||food.p||food.c||food.f)){ scanFail('Barcode '+code+' isn’t in the food database (or has no nutrition info). Try Add manually.'); }
+          else renderScanResult(food);
+        }catch(e){ scanFail('Couldn’t reach the database. Try again, or Add manually.'); }
+      }
+    }catch(e){}
+    busy=false;
+  }, 350);
+}
+document.getElementById('scanBtn').onclick=function(){ scanOverlay.classList.add('show'); startScan(); };
+document.getElementById('scanClose').onclick=function(){ stopCamera(); scanOverlay.classList.remove('show'); };
+scanOverlay.onclick=function(e){ if(e.target===scanOverlay){ stopCamera(); scanOverlay.classList.remove('show'); } };
+
 function wireSearchClear(inputId, clearId, onClear){
   const inp=document.getElementById(inputId), clr=document.getElementById(clearId);
   function upd(){ clr.classList.toggle('show', !!inp.value); }
@@ -1930,6 +2026,8 @@ document.getElementById('addConfirmOk').onclick=function(){
   addConfirmOverlay.classList.remove('show');
   manualOverlay.classList.remove('show');
   onlineOverlay.classList.remove('show');
+  if(typeof stopCamera==='function') stopCamera();
+  document.getElementById('scanOverlay').classList.remove('show');
   renderSavedFoods();
 };
 document.querySelectorAll('.water-btns button[data-ml]').forEach(b=>b.onclick=()=>addWater(parseInt(b.dataset.ml,10)));
