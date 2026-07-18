@@ -402,6 +402,8 @@
   .gc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .gc-row label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
   .gc-row input{width:88px;text-align:right;}
+  .online-btn{width:100%;margin-top:2px;}
+  .online-results{display:flex;flex-direction:column;margin:10px 0 4px;}
 
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
@@ -460,6 +462,8 @@
       <div class="board-label">ADD FOOD</div>
       <input class="focus-input diet-search" id="foodSearch" type="text" placeholder="Search your foods…">
       <div class="saved-foods" id="savedFoods"></div>
+      <button class="reset online-btn" id="onlineBtn">Search online food database</button>
+      <div class="online-results" id="onlineResults"></div>
       <button class="add-set" id="newFoodBtn">+ New food</button>
       <div class="newfood-form" id="newFoodForm" hidden>
         <input class="focus-input" id="nfName" type="text" placeholder="Food name">
@@ -1262,6 +1266,7 @@ document.querySelectorAll('.tab').forEach(t=>{
   t.onclick=()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
     const v=t.dataset.v; currentTab=v;
+    document.querySelector('footer').hidden = v!=='train';
     document.getElementById('trainView').hidden = v!=='train';
     document.getElementById('dietView').hidden = v!=='diet';
     document.getElementById('progressView').hidden = v!=='progress';
@@ -1726,6 +1731,66 @@ document.getElementById('waterCustom').onclick=function(){ const n=dnum(prompt('
 document.getElementById('waterUndo').onclick=undoWater;
 document.getElementById('dietPrev').onclick=function(){ dietDate=isoShift(dietDate,-1); waterUndo=[]; renderDiet(); };
 document.getElementById('dietNext').onclick=function(){ if(dietDate>=todayISO()) return; dietDate=isoShift(dietDate,1); waterUndo=[]; renderDiet(); };
+
+/* ---- Stage 2: online food database (Open Food Facts, keyless) ---- */
+function offKcal(n){
+  if(n==null) return 0;
+  if(n['energy-kcal_100g']!=null) return +n['energy-kcal_100g'];
+  if(n['energy-kcal']!=null) return +n['energy-kcal'];
+  if(n['energy-kcal_value']!=null) return +n['energy-kcal_value'];
+  if(n['energy_100g']!=null) return +n['energy_100g']/4.184;
+  return 0;
+}
+async function fetchJSON(url){
+  const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),12000);
+  try{ const r=await fetch(url,{signal:ctrl.signal}); if(!r.ok) throw new Error('status '+r.status); return await r.json(); }
+  finally{ clearTimeout(t); }
+}
+async function fetchOFF(q){
+  const fields='product_name,brands,nutriments,code';
+  try{
+    const d=await fetchJSON('https://search.openfoodfacts.org/search?q='+encodeURIComponent(q)+'&page_size=20&fields='+fields+'&lang=en');
+    const arr=d.hits||d.products||[]; if(arr.length) return arr;
+  }catch(e){}
+  const d=await fetchJSON('https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=20&fields='+fields);
+  return d.products||d.hits||[];
+}
+function offToFood(p){
+  const n=p.nutriments||{};
+  const brand = p.brands ? (' ('+String(p.brands).split(',')[0].trim()+')') : '';
+  const name = ((p.product_name||'').trim()+brand).slice(0,80);
+  return { name, kcal:r0(offKcal(n)), p:r0(+n.proteins_100g||+n.proteins||0),
+    c:r0(+n.carbohydrates_100g||+n.carbohydrates||0), f:r0(+n.fat_100g||+n.fat||0) };
+}
+async function searchOnline(){
+  const q=(document.getElementById('foodSearch').value||'').trim();
+  const box=document.getElementById('onlineResults');
+  if(!q){ box.innerHTML='<div class="sf-empty">Type a food name in the box above, then tap search.</div>'; return; }
+  if(!navigator.onLine){ box.innerHTML='<div class="sf-empty">You\u2019re offline — online search needs a connection. Your saved foods still work.</div>'; return; }
+  box.innerHTML='<div class="sf-empty">Searching the food database…</div>';
+  try{
+    const products=await fetchOFF(q);
+    const good=(products||[]).map(offToFood).filter(f=>f.name && (f.kcal||f.p||f.c||f.f));
+    if(!good.length){ box.innerHTML='<div class="sf-empty">No usable matches. Try a simpler name (e.g. “chicken breast”), or add it manually below.</div>'; return; }
+    box.innerHTML='<div class="sf-empty">Values are per 100 g — set servings (1 = 100 g, 1.5 = 150 g). Adding also saves it to your foods.</div>';
+    good.slice(0,20).forEach(function(g){
+      const food={ id:uid(), name:g.name, serv:'100 g', kcal:g.kcal, p:g.p, c:g.c, f:g.f };
+      const row=document.createElement('div'); row.className='sf-row';
+      row.innerHTML='<div class="sf-info"><div class="sf-name">'+escapeHtml(food.name)+'</div>'+
+        '<div class="sf-sub">'+food.kcal+' kcal · P'+food.p+' C'+food.c+' F'+food.f+' / 100 g</div></div>'+
+        '<input class="sf-qty" type="text" inputmode="decimal" value="1"><button class="sf-add">Add</button>';
+      const qtyEl=row.querySelector('.sf-qty');
+      row.querySelector('.sf-add').onclick=function(){
+        const qty=dnum(qtyEl.value)||1;
+        state.foods=state.foods||[];
+        if(!state.foods.some(x=>(x.name||'').toLowerCase()===food.name.toLowerCase())) state.foods.push(deepCopy(food));
+        logFood(food,qty); renderSavedFoods();
+      };
+      box.appendChild(row);
+    });
+  }catch(e){ box.innerHTML='<div class="sf-empty">Couldn\u2019t reach the food database right now. Try again, or add the food manually below.</div>'; }
+}
+document.getElementById('onlineBtn').onclick=searchOnline;
 
 (async()=>{
   await load();
