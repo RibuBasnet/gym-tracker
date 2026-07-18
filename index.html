@@ -546,7 +546,7 @@
       </div>
       <button class="def-done" id="defDone">Done</button>
     </div>
-    <p class="def-hint">Edit your default exercises, sets, and ⓘ guides here. This is what <b>Restore default</b> pulls from — your live routine isn't touched until you restore.</p>
+    <p class="def-hint">Edit your default exercises, sets, and ⓘ guides here. This is what <b>Restore default</b> pulls from — your current routine isn't touched until you restore.</p>
     <div id="defaultDays"></div>
     <button class="reset def-factory" id="defFactory">Factory reset template</button>
   </div>
@@ -557,7 +557,7 @@
       <button data-u="lb">LB</button>
     </div>
     <div class="foot-actions">
-      <button class="reset" id="editBtn">Edit routine</button>
+      <button class="reset" id="editBtn">Edit current routine</button>
       <button class="reset" id="resetBtn">Reset this week</button>
     </div>
     <button class="reset restore-btn" id="restoreBtn" hidden>Restore default routine</button>
@@ -568,7 +568,7 @@
   <div class="overlay" id="restoreOverlay">
     <div class="modal">
       <h2>Restore default routine?</h2>
-      <p>This puts back your saved default template and removes any temporary add-ons or changes. Your logged history is kept.</p>
+      <p>This replaces your <b>current routine</b> with your <b>default template</b> — the version under "Edit default template". Any hand-edits to the current routine are overwritten. Your logged history (sets, PRs, bodyweight, diet) is kept.</p>
       <div class="modal-actions">
         <button id="restoreCancel">Cancel</button>
         <button class="confirm" id="restoreConfirm">Restore</button>
@@ -579,7 +579,7 @@
   <div class="overlay" id="factoryOverlay">
     <div class="modal">
       <h2>Factory reset template?</h2>
-      <p>This erases your entire custom template — every exercise, day, and edited ⓘ guide — and rebuilds the original built-in routine. This can't be undone. Your logged history is kept.</p>
+      <p>This wipes your <b>default template</b> and rebuilds it from the original built-in routine. It only touches the template — your <b>current routine</b> stays as-is until you tap <b>Restore default</b>. Logged history is kept. This can't be undone.</p>
       <div class="modal-actions">
         <button id="factoryCancel">Cancel</button>
         <button class="confirm" id="factoryConfirm">Factory reset</button>
@@ -1310,7 +1310,7 @@ const restoreBtn=document.getElementById('restoreBtn');
 const editDefaultBtn=document.getElementById('editDefaultBtn');
 editBtn.onclick=()=>{
   editing=!editing;
-  editBtn.textContent = editing ? 'Done editing' : 'Edit routine';
+  editBtn.textContent = editing ? 'Done editing' : 'Edit current routine';
   restoreBtn.hidden = !editing;
   editDefaultBtn.hidden = !editing;
   openLoggers.clear();
