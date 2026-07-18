@@ -411,6 +411,8 @@
   .nf-eat-lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
   .nf-amt{display:flex;gap:8px;flex:1;}
   .nf-amt .amt-val{flex:1;}
+  .diet-foot{margin-top:24px;display:flex;justify-content:center;}
+  .reset:disabled{opacity:.4;cursor:default;}
 
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
@@ -492,6 +494,10 @@
           <button class="add-set" id="nfAdd">Add to day</button>
         </div>
       </div>
+    </div>
+
+    <div class="diet-foot">
+      <button class="reset" id="clearDayBtn">Clear this day</button>
     </div>
   </div>
 
@@ -626,6 +632,17 @@
       <div class="modal-actions">
         <button id="goalCancel">Cancel</button>
         <button class="confirm" id="goalSave">Save targets</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="clearDayOverlay">
+    <div class="modal">
+      <h2>Clear this day?</h2>
+      <p id="clearDayMsg"></p>
+      <div class="modal-actions">
+        <button id="clearDayCancel">Cancel</button>
+        <button class="confirm" id="clearDayConfirm">Clear</button>
       </div>
     </div>
   </div>
@@ -1638,6 +1655,8 @@ function renderDiet(){
       fl.appendChild(row);
     });
   }
+  const cdb=document.getElementById('clearDayBtn');
+  if(cdb) cdb.disabled = !(day.items&&day.items.length) && !(day.water);
   renderSavedFoods();
 }
 function renderSavedFoods(){
@@ -1836,6 +1855,19 @@ async function searchOnline(){
   }catch(e){ box.innerHTML='<div class="sf-empty">Couldn\u2019t reach the food database right now. Try again, or add the food manually below.</div>'; }
 }
 document.getElementById('onlineBtn').onclick=searchOnline;
+
+/* ---- clear this day ---- */
+const clearDayOverlay=document.getElementById('clearDayOverlay');
+document.getElementById('clearDayBtn').onclick=function(){
+  document.getElementById('clearDayMsg').textContent='This removes all food entries and resets water for '+dietDateLabel(dietDate)+'. Your targets, saved foods and other days are kept.';
+  clearDayOverlay.classList.add('show');
+};
+document.getElementById('clearDayCancel').onclick=()=>clearDayOverlay.classList.remove('show');
+clearDayOverlay.onclick=function(e){ if(e.target===clearDayOverlay) clearDayOverlay.classList.remove('show'); };
+document.getElementById('clearDayConfirm').onclick=function(){
+  if(state.diet && state.diet[dietDate]) state.diet[dietDate]={items:[],water:0};
+  waterUndo=[]; clearDayOverlay.classList.remove('show'); renderDiet();
+};
 
 (async()=>{
   await load();
