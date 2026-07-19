@@ -260,6 +260,9 @@
   .focus-input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);
     font-family:"Oswald",sans-serif;font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.02em;padding:9px 11px;outline:none;}
   .focus-input:focus{border-color:var(--accent);}
+  .serv-select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);
+    font-family:"Oswald",sans-serif;font-weight:600;font-size:16px;text-transform:uppercase;letter-spacing:.02em;padding:10px 11px;outline:none;}
+  .serv-select:focus{border-color:var(--accent);}
   .de-fields{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
   .de-fields .focus-input{flex:none;width:100%;}
   .sub-input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);
@@ -721,7 +724,26 @@
         <div class="goal-seg" id="nfBasis">
           <button data-v="g" class="on">Per 100 g</button><button data-v="unit">Per serving</button>
         </div>
-        <div id="nfServWrap" hidden><input class="focus-input" id="nfServ" type="text" placeholder="Serving name (e.g. 1 scoop, 1 egg)"></div>
+        <div id="nfServWrap" hidden>
+          <select class="serv-select" id="nfServ">
+            <option value="piece">piece</option>
+            <option value="slice">slice</option>
+            <option value="scoop">scoop</option>
+            <option value="tbsp">spoon (tbsp)</option>
+            <option value="tsp">teaspoon (tsp)</option>
+            <option value="cup">cup</option>
+            <option value="glass">glass</option>
+            <option value="bowl">bowl</option>
+            <option value="handful">handful</option>
+            <option value="can">can</option>
+            <option value="bottle">bottle</option>
+            <option value="bar">bar</option>
+            <option value="packet">packet</option>
+            <option value="serving" selected>serving</option>
+            <option value="__custom">Custom…</option>
+          </select>
+          <input class="focus-input" id="nfServCustom" type="text" placeholder="Custom serving name" hidden style="margin-top:8px">
+        </div>
         <div class="nf-per" id="nfPerHint">Macros per 100 g</div>
         <div class="nf-macros">
           <div class="set-field"><input id="nfKcal" type="text" inputmode="decimal" placeholder="kcal"></div>
@@ -2084,6 +2106,21 @@ document.querySelectorAll('#nfBasis button').forEach(b=>b.onclick=function(){
   document.querySelectorAll('#nfBasis button').forEach(x=>x.classList.toggle('on',x===b));
   renderNfAmount();
 });
+// Serving-unit dropdown (with Custom… fallback)
+const SERV_UNITS=['piece','slice','scoop','tbsp','tsp','cup','glass','bowl','handful','can','bottle','bar','packet','serving'];
+function servCustomToggle(){ document.getElementById('nfServCustom').hidden = document.getElementById('nfServ').value!=='__custom'; }
+function setServ(v){
+  v=(v||'').trim();
+  const sel=document.getElementById('nfServ'), cust=document.getElementById('nfServCustom');
+  if(v && SERV_UNITS.indexOf(v)<0){ sel.value='__custom'; cust.hidden=false; cust.value=v; }
+  else { sel.value=(v||'serving'); cust.hidden=true; cust.value=''; }
+}
+function readServ(){
+  const sel=document.getElementById('nfServ');
+  if(sel.value==='__custom') return (document.getElementById('nfServCustom').value||'').trim()||'serving';
+  return sel.value||'serving';
+}
+document.getElementById('nfServ').addEventListener('change',servCustomToggle);
 let editingFoodId=null;
 function setManualMode(edit){
   editingFoodId = edit ? editingFoodId : null;
@@ -2096,7 +2133,7 @@ function openEditFood(f){
   document.getElementById('nfName').value=f.name||'';
   const basis=f.basis==='unit'?'unit':'g';
   document.querySelectorAll('#nfBasis button').forEach(x=>x.classList.toggle('on',x.dataset.v===basis));
-  document.getElementById('nfServ').value=f.serv||'';
+  setServ(f.serv||'');
   document.getElementById('nfKcal').value=(f.kcal!=null?f.kcal:'');
   document.getElementById('nfP').value=(f.p!=null?f.p:'');
   document.getElementById('nfC').value=(f.c!=null?f.c:'');
@@ -2107,7 +2144,8 @@ function openEditFood(f){
 }
 document.getElementById('manualBtn').onclick=function(){
   editingFoodId=null;
-  ['nfName','nfServ','nfKcal','nfP','nfC','nfF'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['nfName','nfKcal','nfP','nfC','nfF'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  setServ('serving');
   document.querySelectorAll('#nfBasis button').forEach(x=>x.classList.toggle('on',x.dataset.v==='g'));
   setManualMode(false);
   renderNfAmount();
@@ -2119,7 +2157,7 @@ document.getElementById('nfAdd').onclick=function(){
   const name=(document.getElementById('nfName').value||'').trim();
   if(!name){ alert('Give the food a name.'); return; }
   const basis=nfBasisVal();
-  const serv = basis==='unit' ? ((document.getElementById('nfServ').value||'').trim()||'1 serving') : '';
+  const serv = basis==='unit' ? readServ() : '';
   const kcal=dnum(document.getElementById('nfKcal').value)||0, p=dnum(document.getElementById('nfP').value)||0,
         c=dnum(document.getElementById('nfC').value)||0, fat=dnum(document.getElementById('nfF').value)||0;
   if(editingFoodId){
