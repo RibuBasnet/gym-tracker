@@ -513,6 +513,7 @@
         <button class="search-clear" id="foodSearchClear" aria-label="Clear search">×</button>
       </div>
       <div class="food-add-btns">
+        <button class="add-set" id="commonBtn">+ Common foods</button>
         <button class="add-set" id="manualBtn">+ Add manually</button>
         <button class="add-set" id="onlineOpenBtn">+ Add from online</button>
         <button class="add-set" id="scanBtn">Scan barcode</button>
@@ -745,6 +746,21 @@
       <div class="online-results" id="onlineResults"></div>
       <div class="modal-actions">
         <button id="onlineClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="commonOverlay">
+    <div class="modal goal-modal">
+      <h2>Common foods</h2>
+      <p class="diet-hint" style="margin-bottom:12px">Everyday whole foods with standard macros — tap to add and log. For packaged or restaurant items, use “+ Add from online”.</p>
+      <div class="search-wrap">
+        <input class="focus-input" id="commonQuery" type="text" placeholder="Search common foods…">
+        <button class="search-clear" id="commonQueryClear" aria-label="Clear search">×</button>
+      </div>
+      <div class="online-results" id="commonResults"></div>
+      <div class="modal-actions">
+        <button id="commonClose">Close</button>
       </div>
     </div>
   </div>
@@ -1900,6 +1916,49 @@ function renderSavedFoods(){
 }
 const UNIT_G = { g:1, kg:1000, oz:28.3495, lb:453.592 };
 function gramsFrom(val,unit){ return (val||0)*(UNIT_G[unit]||1); }
+// Built-in whole-food list with standard per-100g / per-serving macros (USDA-based).
+const COMMON_FOODS=[
+  {name:'Egg',basis:'unit',serv:'1 egg',kcal:72,p:6.3,c:0.4,f:4.8},
+  {name:'Egg white',basis:'unit',serv:'1 egg white',kcal:17,p:3.6,c:0.2,f:0.1},
+  {name:'Chicken breast',basis:'g',kcal:165,p:31,c:0,f:3.6},
+  {name:'Chicken thigh',basis:'g',kcal:209,p:26,c:0,f:10.9},
+  {name:'Lean beef mince',basis:'g',kcal:185,p:22,c:0,f:10},
+  {name:'Salmon',basis:'g',kcal:208,p:20,c:0,f:13},
+  {name:'Canned tuna (in water)',basis:'g',kcal:116,p:26,c:0,f:1},
+  {name:'Shrimp',basis:'g',kcal:99,p:24,c:0.2,f:0.3},
+  {name:'Firm tofu',basis:'g',kcal:144,p:15,c:3,f:8},
+  {name:'Whey protein',basis:'unit',serv:'1 scoop',kcal:120,p:24,c:3,f:1.5},
+  {name:'Lentils (cooked)',basis:'g',kcal:116,p:9,c:20,f:0.4},
+  {name:'Chickpeas (cooked)',basis:'g',kcal:164,p:9,c:27,f:2.6},
+  {name:'Whole milk',basis:'g',kcal:61,p:3.2,c:4.8,f:3.3},
+  {name:'Skim milk',basis:'g',kcal:34,p:3.4,c:5,f:0.1},
+  {name:'Greek yogurt (plain)',basis:'g',kcal:59,p:10,c:3.6,f:0.4},
+  {name:'Cottage cheese',basis:'g',kcal:98,p:11,c:3.4,f:4.3},
+  {name:'Cheddar cheese',basis:'g',kcal:403,p:25,c:1.3,f:33},
+  {name:'White rice (cooked)',basis:'g',kcal:130,p:2.7,c:28,f:0.3},
+  {name:'Brown rice (cooked)',basis:'g',kcal:123,p:2.7,c:26,f:1},
+  {name:'Pasta (cooked)',basis:'g',kcal:158,p:6,c:31,f:0.9},
+  {name:'Oats (dry)',basis:'g',kcal:379,p:13,c:67,f:7},
+  {name:'Potato (boiled)',basis:'g',kcal:87,p:2,c:20,f:0.1},
+  {name:'Sweet potato (cooked)',basis:'g',kcal:90,p:2,c:21,f:0.2},
+  {name:'Wholewheat bread',basis:'unit',serv:'1 slice',kcal:69,p:3.6,c:12,f:1},
+  {name:'Banana',basis:'unit',serv:'1 banana',kcal:105,p:1.3,c:27,f:0.4},
+  {name:'Apple',basis:'unit',serv:'1 apple',kcal:95,p:0.5,c:25,f:0.3},
+  {name:'Orange',basis:'unit',serv:'1 orange',kcal:62,p:1.2,c:15,f:0.2},
+  {name:'Avocado',basis:'g',kcal:160,p:2,c:9,f:15},
+  {name:'Blueberries',basis:'g',kcal:57,p:0.7,c:14,f:0.3},
+  {name:'Strawberries',basis:'g',kcal:32,p:0.7,c:7.7,f:0.3},
+  {name:'Broccoli (cooked)',basis:'g',kcal:35,p:2.4,c:7,f:0.4},
+  {name:'Spinach',basis:'g',kcal:23,p:2.9,c:3.6,f:0.4},
+  {name:'Carrot',basis:'g',kcal:41,p:0.9,c:10,f:0.2},
+  {name:'Mixed salad greens',basis:'g',kcal:17,p:1.4,c:3,f:0.2},
+  {name:'Peanut butter',basis:'unit',serv:'1 tbsp',kcal:94,p:4,c:3,f:8},
+  {name:'Almonds',basis:'g',kcal:579,p:21,c:22,f:50},
+  {name:'Olive oil',basis:'unit',serv:'1 tbsp',kcal:119,p:0,c:0,f:14},
+  {name:'Butter',basis:'unit',serv:'1 tbsp',kcal:102,p:0.1,c:0,f:12},
+  {name:'Honey',basis:'unit',serv:'1 tbsp',kcal:64,p:0,c:17,f:0},
+  {name:'Dark chocolate (70-85%)',basis:'g',kcal:598,p:8,c:46,f:43},
+];
 function amountControl(food){
   if(food.basis==='g'){
     return '<input class="sf-qty amt-val" type="text" inputmode="decimal" value="100">'+
@@ -2058,6 +2117,39 @@ document.getElementById('onlineClose').onclick=()=>onlineOverlay.classList.remov
 onlineOverlay.onclick=function(e){ if(e.target===onlineOverlay) onlineOverlay.classList.remove('show'); };
 document.getElementById('onlineGo').onclick=searchOnline;
 
+/* ---- Common foods (built-in whole-food list) ---- */
+const commonOverlay=document.getElementById('commonOverlay');
+function commonSub(f){
+  const per = f.basis==='g' ? '100 g' : (f.serv||'serving');
+  return f.kcal+' kcal · P'+f.p+' C'+f.c+' F'+f.f+' / '+per;
+}
+function renderCommon(q){
+  q=(q||'').trim().toLowerCase();
+  const box=document.getElementById('commonResults'); box.innerHTML='';
+  const list=COMMON_FOODS.filter(f=>!q||f.name.toLowerCase().indexOf(q)>=0);
+  if(!list.length){ box.innerHTML='<div class="sf-empty">No common food matches “'+escapeHtml(q)+'”. Try “+ Add from online” or “+ Add manually”.</div>'; return; }
+  list.forEach(function(f){
+    const row=document.createElement('div'); row.className='sf-row';
+    row.innerHTML='<div class="sf-info"><div class="sf-name">'+escapeHtml(f.name)+'</div>'+
+      '<div class="sf-sub">'+commonSub(f)+'</div></div>'+
+      amountControl({basis:f.basis})+'<button class="sf-add">+ Add</button>';
+    row.querySelector('.sf-add').onclick=function(){
+      const a=readAmount(row);
+      askAddConfirm({id:uid(), name:f.name, basis:f.basis, serv:f.serv||'', kcal:f.kcal, p:f.p, c:f.c, f:f.f}, a.amount, a.unit);
+    };
+    box.appendChild(row);
+  });
+}
+document.getElementById('commonBtn').onclick=function(){
+  document.getElementById('commonQuery').value='';
+  renderCommon('');
+  commonOverlay.classList.add('show');
+};
+document.getElementById('commonQuery').addEventListener('input',function(){ renderCommon(this.value); });
+document.getElementById('commonQueryClear').onclick=function(){ const q=document.getElementById('commonQuery'); q.value=''; renderCommon(''); q.focus(); };
+document.getElementById('commonClose').onclick=()=>commonOverlay.classList.remove('show');
+commonOverlay.onclick=function(e){ if(e.target===commonOverlay) commonOverlay.classList.remove('show'); };
+
 /* ---- barcode scanning (Open Food Facts product lookup) ---- */
 const scanOverlay=document.getElementById('scanOverlay');
 let scanStream=null, scanTimer=null, scanDetector=null, scanLibPromise=null;
@@ -2175,6 +2267,7 @@ document.getElementById('addConfirmOk').onclick=function(){
   addConfirmOverlay.classList.remove('show');
   manualOverlay.classList.remove('show');
   onlineOverlay.classList.remove('show');
+  document.getElementById('commonOverlay').classList.remove('show');
   if(typeof stopCamera==='function') stopCamera();
   document.getElementById('scanOverlay').classList.remove('show');
   renderSavedFoods();
