@@ -250,6 +250,12 @@
   .focus-input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);
     font-family:"Oswald",sans-serif;font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.02em;padding:9px 11px;outline:none;}
   .focus-input:focus{border-color:var(--accent);}
+  .de-fields{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
+  .de-fields .focus-input{flex:none;width:100%;}
+  .sub-input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);
+    font-family:"Inter",sans-serif;font-size:12px;letter-spacing:.02em;padding:8px 11px;outline:none;}
+  .sub-input::placeholder{color:var(--muted);}
+  .sub-input:focus{border-color:var(--accent);}
   .rest-toggle{flex-shrink:0;font-family:"Oswald",sans-serif;font-weight:600;font-size:11px;letter-spacing:.1em;
     padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;}
   .rest-toggle.is-rest{color:var(--rest);}
@@ -291,6 +297,13 @@
     font-family:"Inter",sans-serif;font-size:13px;line-height:1.5;padding:9px 10px;outline:none;width:100%;}
   .guide-edit textarea{min-height:80px;resize:vertical;}
   .guide-edit input:focus,.guide-edit textarea:focus{border-color:var(--accent);}
+  .sr-row{display:flex;align-items:stretch;gap:8px;}
+  .sr-field{flex:1;min-width:0;display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:0 11px;}
+  .sr-field:focus-within{border-color:var(--accent);}
+  .sr-field input{flex:1;min-width:0;background:transparent;border:none;color:var(--ink);
+    font-family:"IBM Plex Mono",monospace;font-size:14px;padding:11px 0;outline:none;}
+  .sr-cap{font-family:"Oswald",sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);flex:none;}
+  .sr-x{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;flex:none;width:10px;}
   .ex-edit .fields{gap:6px;}
   .def-factory{width:100%;margin-top:18px;color:var(--muted);}
   .def-factory.confirm-armed{color:var(--accent);border-color:var(--accent);}
@@ -793,6 +806,20 @@ let openGuides = new Set();
 let currentTab = 'train';
 function uid(){ return 'x'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36); }
 function deepCopy(o){ return JSON.parse(JSON.stringify(o)); }
+// Split a "4 × 6–8" string into {sets, reps}; join them back with a fixed ×.
+function splitSR(s){
+  s=String(s||'');
+  const parts=s.split('×');
+  if(parts.length>=2) return {sets:parts[0].trim(), reps:parts.slice(1).join('×').trim()};
+  const m=s.match(/^\s*(\d+)\s*[xX]\s*(.+)$/);
+  if(m) return {sets:m[1], reps:m[2].trim()};
+  return {sets:s.trim(), reps:''};
+}
+function joinSR(sets,reps){
+  sets=String(sets||'').trim(); reps=String(reps||'').trim();
+  if(sets&&reps) return sets+' × '+reps;
+  return sets||reps||'';
+}
 // The editable master template: default exercises + their guide text baked in.
 function seedDefault(){
   return DEFAULT_ROUTINE.map(d=>({
@@ -1022,11 +1049,16 @@ function render(){
       head.className='day-edit-head';
       head.innerHTML=
         '<div class="de-name"></div>'+
-        '<input class="focus-input" aria-label="Day focus">'+
+        '<div class="de-fields">'+
+          '<input class="focus-input" aria-label="Day focus" placeholder="Focus">'+
+          '<input class="sub-input" aria-label="Day note" placeholder="Note (optional)">'+
+        '</div>'+
         '<button class="rest-toggle"></button>';
       head.querySelector('.de-name').textContent=day.name;
       const fi=head.querySelector('.focus-input'); fi.value=day.focus;
       fi.oninput=()=>{ day.focus=fi.value; save(); };
+      const si=head.querySelector('.sub-input'); si.value=day.sub||'';
+      si.oninput=()=>{ day.sub=si.value; save(); };
       const rt=head.querySelector('.rest-toggle');
       rt.textContent=day.rest?'REST':'TRAIN'; rt.classList.toggle('is-rest',day.rest);
       rt.onclick=()=>{ day.rest=!day.rest; save(); render(); };
@@ -1073,16 +1105,23 @@ function render(){
             '<div class="moves"><button class="move up" aria-label="Move up">▲</button><button class="move dn" aria-label="Move down">▼</button></div>'+
             '<div class="fields">'+
               '<input class="e-name" placeholder="Exercise name" aria-label="Exercise name">'+
-              '<input class="e-sets" placeholder="e.g. 4 × 6–8" aria-label="Sets and reps">'+
+              '<div class="sr-row">'+
+                '<div class="sr-field"><input class="e-setn" type="text" inputmode="numeric" placeholder="4" aria-label="Number of sets"><span class="sr-cap">sets</span></div>'+
+                '<span class="sr-x">×</span>'+
+                '<div class="sr-field"><input class="e-repn" type="text" placeholder="6–8" aria-label="Reps"><span class="sr-cap">reps</span></div>'+
+              '</div>'+
               '<button class="guide-toggle">ⓘ Guide</button>'+
               '<div class="guide-edit"><label>TARGETS</label><input class="g-m" placeholder="e.g. Chest, triceps">'+
               '<label>HOW TO</label><textarea class="g-h" placeholder="How to perform it…"></textarea></div>'+
             '</div>'+
             '<button class="ex-del" aria-label="Delete exercise">×</button>';
-          const nIn=er.querySelector('.e-name'), sIn=er.querySelector('.e-sets');
-          nIn.value=e.n; sIn.value=e.s;
+          const nIn=er.querySelector('.e-name');
+          nIn.value=e.n;
           nIn.oninput=()=>{ e.n=nIn.value; save(); };
-          sIn.oninput=()=>{ e.s=sIn.value; save(); };
+          const setIn=er.querySelector('.e-setn'), repIn=er.querySelector('.e-repn');
+          const _sr=splitSR(e.s); setIn.value=_sr.sets; repIn.value=_sr.reps;
+          const _syncSR=()=>{ e.s=joinSR(setIn.value, repIn.value); save(); };
+          setIn.oninput=_syncSR; repIn.oninput=_syncSR;
           const up=er.querySelector('.up'), dn=er.querySelector('.dn');
           up.disabled=(i===0); dn.disabled=(i===day.ex.length-1);
           up.onclick=()=>{ if(i>0){ const t=day.ex[i-1]; day.ex[i-1]=day.ex[i]; day.ex[i]=t; save(); render(); } };
