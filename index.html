@@ -572,6 +572,8 @@
       <button class="reset" id="resetBtn">Reset this week</button>
     </div>
     <button class="reset restore-btn" id="restoreBtn" hidden>Load calisthenics + weighted routine</button>
+    <button class="reset restore-btn" id="loadWeightedBtn" hidden>Load weighted routine</button>
+    <button class="reset restore-btn" id="loadCaliBtn" hidden>Load calisthenics routine</button>
     <button class="reset restore-btn" id="factoryBtn" hidden>Factory reset</button>
     <div class="foot-note">Auto-resets every <b>Monday</b>. Your sets are saved on this device.</div>
   </footer>
@@ -579,10 +581,32 @@
   <div class="overlay" id="restoreOverlay">
     <div class="modal">
       <h2>Load calisthenics + weighted routine?</h2>
-      <p>This replaces your current routine with the ready-made starter routine. Any changes you've made to your routine are overwritten. Your logged history — sets, PRs, bodyweight, diet — is kept.</p>
+      <p>This replaces your current routine with the ready-made calisthenics + weighted routine. Any changes you've made to your routine are overwritten. Your logged history — sets, PRs, bodyweight, diet — is kept.</p>
       <div class="modal-actions">
         <button id="restoreCancel">Cancel</button>
         <button class="confirm" id="restoreConfirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="loadWeightedOverlay">
+    <div class="modal">
+      <h2>Load weighted routine?</h2>
+      <p>This replaces your current routine with the ready-made weighted routine. Any changes you've made to your routine are overwritten. Your logged history — sets, PRs, bodyweight, diet — is kept.</p>
+      <div class="modal-actions">
+        <button id="loadWeightedCancel">Cancel</button>
+        <button class="confirm" id="loadWeightedConfirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="loadCaliOverlay">
+    <div class="modal">
+      <h2>Load calisthenics routine?</h2>
+      <p>This replaces your current routine with the ready-made calisthenics routine. Any changes you've made to your routine are overwritten. Your logged history — sets, PRs, bodyweight, diet — is kept.</p>
+      <div class="modal-actions">
+        <button id="loadCaliCancel">Cancel</button>
+        <button class="confirm" id="loadCaliConfirm">Confirm</button>
       </div>
     </div>
   </div>
@@ -829,13 +853,98 @@ function fmtSR(s){
   return r.sets+' '+setW+' × '+r.reps+' '+repW;
 }
 // The editable master template: default exercises + their guide text baked in.
-function seedDefault(){
-  return DEFAULT_ROUTINE.map(d=>({
+// Preset routines. Every exercise starts at a plain 3 × 10 — edit sets/reps in-app.
+const WEIGHTED_ROUTINE = [
+  {key:'mon',short:'M',name:'Monday',focus:'Push',sub:'strength',rest:false,ex:[
+    {n:'Barbell bench press',s:'3 × 10'},
+    {n:'Overhead press',s:'3 × 10'},
+    {n:'Incline dumbbell press',s:'3 × 10'},
+    {n:'Triceps pushdown',s:'3 × 10'},
+  ]},
+  {key:'tue',short:'T',name:'Tuesday',focus:'Push',sub:'volume',rest:false,ex:[
+    {n:'Incline dumbbell press',s:'3 × 10'},
+    {n:'Cable fly',s:'3 × 10'},
+    {n:'Lateral raises',s:'3 × 10'},
+    {n:'Triceps pushdown',s:'3 × 10'},
+  ]},
+  {key:'wed',short:'W',name:'Wednesday',focus:'Abs',sub:'core',rest:false,ex:[
+    {n:'Cable crunch',s:'3 × 10'},
+    {n:'Weighted hanging leg raises',s:'3 × 10'},
+    {n:'Weighted Russian twists',s:'3 × 10'},
+    {n:'Cable woodchopper',s:'3 × 10'},
+  ]},
+  {key:'thu',short:'T',name:'Thursday',focus:'Pull',sub:'strength',rest:false,ex:[
+    {n:'Barbell row',s:'3 × 10'},
+    {n:'Lat pulldown',s:'3 × 10'},
+    {n:'Barbell / EZ-bar curl',s:'3 × 10'},
+  ]},
+  {key:'fri',short:'F',name:'Friday',focus:'Pull',sub:'volume',rest:false,ex:[
+    {n:'Seated cable row',s:'3 × 10'},
+    {n:'Lat pulldown',s:'3 × 10'},
+    {n:'Face pulls',s:'3 × 10'},
+    {n:'Hammer curl',s:'3 × 10'},
+  ]},
+  {key:'sat',short:'S',name:'Saturday',focus:'Legs',sub:'',rest:false,ex:[
+    {n:'Squat',s:'3 × 10'},
+    {n:'Romanian deadlift',s:'3 × 10'},
+    {n:'Leg press',s:'3 × 10'},
+    {n:'Leg curl',s:'3 × 10'},
+    {n:'Standing calf raise',s:'3 × 10'},
+  ]},
+  {key:'sun',short:'S',name:'Sunday',focus:'Rest',sub:'recover',rest:true,ex:[]},
+];
+const CALISTHENICS_ROUTINE = [
+  {key:'mon',short:'M',name:'Monday',focus:'Push',sub:'strength',rest:false,ex:[
+    {n:'Standard push-ups',s:'3 × 10'},
+    {n:'Dips',s:'3 × 10'},
+    {n:'Pike push-ups',s:'3 × 10'},
+    {n:'Diamond push-ups',s:'3 × 10'},
+  ]},
+  {key:'tue',short:'T',name:'Tuesday',focus:'Push',sub:'variations',rest:false,ex:[
+    {n:'Decline push-ups',s:'3 × 10'},
+    {n:'Wide push-ups',s:'3 × 10'},
+    {n:'Incline push-ups',s:'3 × 10'},
+    {n:'Hindu push-ups',s:'3 × 10'},
+  ]},
+  {key:'wed',short:'W',name:'Wednesday',focus:'Abs',sub:'core',rest:false,ex:[
+    {n:'Hanging leg raises',s:'3 × 10'},
+    {n:'Toes-to-bar',s:'3 × 10'},
+    {n:'Russian twists',s:'3 × 10'},
+    {n:'Bicycle crunches',s:'3 × 10'},
+    {n:'Plank',s:'3 × 10'},
+    {n:'Hollow body hold',s:'3 × 10'},
+  ]},
+  {key:'thu',short:'T',name:'Thursday',focus:'Pull',sub:'strength',rest:false,ex:[
+    {n:'Standard pull-ups (pronated)',s:'3 × 10'},
+    {n:'Chin-ups (supinated)',s:'3 × 10'},
+    {n:'Inverted rows',s:'3 × 10'},
+  ]},
+  {key:'fri',short:'F',name:'Friday',focus:'Pull',sub:'variations',rest:false,ex:[
+    {n:'Neutral-grip pull-ups',s:'3 × 10'},
+    {n:'Wide-grip pull-ups',s:'3 × 10'},
+    {n:'Inverted rows',s:'3 × 10'},
+    {n:'Scapular pull-ups / negatives',s:'3 × 10'},
+  ]},
+  {key:'sat',short:'S',name:'Saturday',focus:'Legs',sub:'',rest:false,ex:[
+    {n:'Bulgarian split squats',s:'3 × 10'},
+    {n:'Pistol squats',s:'3 × 10'},
+    {n:'Nordic hamstring curls',s:'3 × 10'},
+    {n:'Single-leg glute bridge',s:'3 × 10'},
+    {n:'Single-leg calf raise',s:'3 × 10'},
+  ]},
+  {key:'sun',short:'S',name:'Sunday',focus:'Rest',sub:'recover',rest:true,ex:[]},
+];
+// Bake guide text (from HOWTO) into a routine definition; the id prefix keeps each preset's logs/PRs separate.
+function seedFrom(def, idPrefix){
+  return def.map(d=>({
     key:d.key, short:d.short, name:d.name, focus:d.focus, sub:d.sub, rest:d.rest,
     ex:d.ex.map((e,i)=>{ const g=HOWTO[e.n]||{m:'',h:''};
-      return {id:d.key+'-'+i, n:e.n, s:e.s, m:g.m, h:g.h}; })
+      return {id:(idPrefix||'')+d.key+'-'+i, n:e.n, s:e.s, m:g.m, h:g.h}; })
   }));
 }
+function seedDefault(){ return seedFrom(DEFAULT_ROUTINE, ''); }
+function seedWeighted(){ return seedFrom(WEIGHTED_ROUTINE, 'w-'); }
+function seedCalisthenics(){ return seedFrom(CALISTHENICS_ROUTINE, 'c-'); }
 function seedRoutine(){ return deepCopy(state&&state.defaultRoutine?state.defaultRoutine:seedDefault()); }
 // Resolve guide text for display: exercise's own fields, else built-in library, else custom.
 function guideFor(ex){
@@ -883,6 +992,17 @@ const HOWTO = {
   'Cable crunch':{m:'Upper abs',h:'Kneel facing a high cable with a rope behind your head. Crunch down by curling your ribs toward your hips — round your spine rather than just bowing at the hips. Squeeze, then rise slowly. Add weight to progress.'},
   'Russian twists':{m:'Obliques',h:'Sit with knees bent, leaning back slightly (heels down or lifted for more challenge). Rotate your torso to tap the floor or a weight beside each hip, alternating sides. Count each side as a rep and move under control — rotate from the core, not just the arms.'},
   'Plank':{m:'Deep core, anti-extension',h:'On your forearms and toes, hold a straight line from head to heels with your core and glutes braced — no sagging or piking of the hips. Hold for time, and log the number of seconds you held in the reps box.'},
+  'Bulgarian split squats':{m:'Quads, glutes (single-leg)',h:'Stand a stride in front of a bench and rest the top of your back foot on it. Lower straight down by bending your front knee until your front thigh is about parallel, keeping your torso tall, then drive up through your front heel. Finish all reps on one leg before switching. Hold dumbbells to add load.'},
+  'Pistol squats':{m:'Quads, glutes, balance',h:'Stand on one leg with the other extended straight out in front. Sit back and down on the standing leg as far as you can control, keeping the free leg off the floor, then stand back up. Very demanding — scale it by squatting to a box or bench, holding a support, or doing assisted reps until you build the strength and mobility.'},
+  'Nordic hamstring curls':{m:'Hamstrings (eccentric)',h:'Kneel on a pad with your ankles anchored under something solid or held by a partner. Keeping your hips straight and body rigid from knees to head, lower yourself forward as slowly as you can using your hamstrings, then push off your hands to help back up. Extremely hard — start with a very short range or band assistance and build up.'},
+  'Single-leg glute bridge':{m:'Glutes, hamstrings',h:'Lie on your back, one knee bent with that foot flat, the other leg extended. Drive through the heel of the planted foot to lift your hips until your body is straight from shoulder to knee, squeezing the glute at the top, then lower under control. Finish the set on one side before switching.'},
+  'Single-leg calf raise':{m:'Calves',h:'Stand on one foot with the ball of the foot on an edge or step, other foot tucked away. Rise up as high as possible onto your toes, pause, then lower slowly for a full stretch. Hold a wall for balance and a dumbbell for extra load.'},
+  'Cable woodchopper':{m:'Obliques, rotational core',h:'Set a cable high or low. Grab the handle with both hands and pull it diagonally across your body — high on one side to low on the other — rotating through your trunk while keeping your arms fairly straight. Control the return. Do all reps one way, then switch sides.'},
+  'Weighted hanging leg raises':{m:'Lower abs, hip flexors',h:'Hang from a bar and hold a dumbbell between your feet, or wear ankle weights. Keeping your legs fairly straight, raise them toward parallel or higher using your abs, then lower slowly without swinging. The added weight turns the standard leg raise into a strength movement — start light.'},
+  'Weighted Russian twists':{m:'Obliques',h:'Sit with knees bent and lean back slightly, holding a plate or dumbbell with both hands. Rotate your torso to move the weight beside each hip, alternating sides under control. Count each side as a rep and rotate from your core, not just your arms. Lift your heels for more challenge.'},
+  'Toes-to-bar':{m:'Abs, hip flexors, grip',h:'Hang from a bar. Using your abs, raise your legs all the way up until your toes touch the bar, then lower under control without swinging. Scale down to knees-to-chest or hanging leg raises until you have the strength and compression to reach the bar.'},
+  'Bicycle crunches':{m:'Abs, obliques',h:'Lie on your back, hands lightly behind your head, legs lifted. Bring one knee toward your chest while rotating the opposite elbow toward it, extending the other leg out, then alternate in a smooth pedaling motion. Move with control and rotate from the trunk rather than pulling on your neck.'},
+  'Hollow body hold':{m:'Deep core, anti-extension',h:'Lie on your back and press your lower back into the floor. Lift your shoulders and legs off the ground so your body forms a shallow banana shape, arms reaching overhead. Hold this tight position for time. Make it easier by bending your knees or keeping your arms by your sides. Log the seconds you held in the reps box.'},
 };
 
 const STORE_KEY = 'gym-tracker-state';
@@ -1443,10 +1563,14 @@ document.getElementById('liftSelect').onchange=e=>renderLiftChart(e.target.value
 const editBtn=document.getElementById('editBtn');
 const restoreBtn=document.getElementById('restoreBtn');
 const factoryBtn=document.getElementById('factoryBtn');
+const loadWeightedBtn=document.getElementById('loadWeightedBtn');
+const loadCaliBtn=document.getElementById('loadCaliBtn');
 editBtn.onclick=()=>{
   editing=!editing;
   editBtn.textContent = editing ? 'Done editing' : 'Edit routine';
   restoreBtn.hidden = !editing;
+  loadWeightedBtn.hidden = !editing;
+  loadCaliBtn.hidden = !editing;
   factoryBtn.hidden = !editing;
   document.getElementById('unitToggle').style.display = editing ? 'none' : '';
   document.getElementById('resetBtn').style.display = editing ? 'none' : '';
@@ -1475,6 +1599,26 @@ document.getElementById('restoreConfirm').onclick=()=>{
   restoreOverlay.classList.remove('show');
 };
 restoreOverlay.onclick=e=>{ if(e.target===restoreOverlay) restoreOverlay.classList.remove('show'); };
+
+// Load weighted routine
+const loadWeightedOverlay=document.getElementById('loadWeightedOverlay');
+loadWeightedBtn.onclick=()=>loadWeightedOverlay.classList.add('show');
+document.getElementById('loadWeightedCancel').onclick=()=>loadWeightedOverlay.classList.remove('show');
+document.getElementById('loadWeightedConfirm').onclick=()=>{
+  state.routine=seedWeighted(); ROUTINE=state.routine; save(); render();
+  loadWeightedOverlay.classList.remove('show');
+};
+loadWeightedOverlay.onclick=e=>{ if(e.target===loadWeightedOverlay) loadWeightedOverlay.classList.remove('show'); };
+
+// Load calisthenics routine
+const loadCaliOverlay=document.getElementById('loadCaliOverlay');
+loadCaliBtn.onclick=()=>loadCaliOverlay.classList.add('show');
+document.getElementById('loadCaliCancel').onclick=()=>loadCaliOverlay.classList.remove('show');
+document.getElementById('loadCaliConfirm').onclick=()=>{
+  state.routine=seedCalisthenics(); ROUTINE=state.routine; save(); render();
+  loadCaliOverlay.classList.remove('show');
+};
+loadCaliOverlay.onclick=e=>{ if(e.target===loadCaliOverlay) loadCaliOverlay.classList.remove('show'); };
 
 const infoOverlay=document.getElementById('infoOverlay');
 let infoEx=null;
