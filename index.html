@@ -246,7 +246,7 @@
   .restore-btn:hover{color:var(--accent);}
   .day-edit-head{display:flex;align-items:center;gap:10px;padding:14px;}
   .de-name{font-family:"Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--muted);width:52px;flex-shrink:0;}
+    text-transform:uppercase;color:var(--muted);flex-shrink:0;white-space:nowrap;}
   .focus-input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);
     font-family:"Oswald",sans-serif;font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.02em;padding:9px 11px;outline:none;}
   .focus-input:focus{border-color:var(--accent);}
@@ -571,18 +571,18 @@
       <button class="reset" id="editBtn">Edit routine</button>
       <button class="reset" id="resetBtn">Reset this week</button>
     </div>
-    <button class="reset restore-btn" id="restoreBtn" hidden>Load starter routine</button>
+    <button class="reset restore-btn" id="restoreBtn" hidden>Load calisthenics + weighted routine</button>
     <button class="reset restore-btn" id="factoryBtn" hidden>Factory reset</button>
     <div class="foot-note">Auto-resets every <b>Monday</b>. Your sets are saved on this device.</div>
   </footer>
 
   <div class="overlay" id="restoreOverlay">
     <div class="modal">
-      <h2>Load starter routine?</h2>
+      <h2>Load calisthenics + weighted routine?</h2>
       <p>This replaces your current routine with the ready-made starter routine. Any changes you've made to your routine are overwritten. Your logged history — sets, PRs, bodyweight, diet — is kept.</p>
       <div class="modal-actions">
         <button id="restoreCancel">Cancel</button>
-        <button class="confirm" id="restoreConfirm">Load starter routine</button>
+        <button class="confirm" id="restoreConfirm">Load calisthenics + weighted routine</button>
       </div>
     </div>
   </div>
@@ -1458,7 +1458,7 @@ document.getElementById('factoryConfirm').onclick=()=>{
 };
 factoryOverlay.onclick=e=>{ if(e.target===factoryOverlay) factoryOverlay.classList.remove('show'); };
 
-// Load starter routine — copies the ready-made routine over your current one
+// Load calisthenics + weighted routine — copies the ready-made routine over your current one
 const restoreOverlay=document.getElementById('restoreOverlay');
 restoreBtn.onclick=()=>restoreOverlay.classList.add('show');
 document.getElementById('restoreCancel').onclick=()=>restoreOverlay.classList.remove('show');
