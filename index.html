@@ -549,48 +549,35 @@
     </div>
   </div>
 
-  <div id="defaultView" hidden>
-    <div class="def-bar">
-      <div>
-        <div class="kicker">MASTER TEMPLATE</div>
-        <div class="def-title">Default Routine</div>
-      </div>
-      <button class="def-done" id="defDone">Done</button>
-    </div>
-    <p class="def-hint">Edit your default exercises, sets, and ⓘ guides here. This is what <b>Restore default</b> pulls from — your current routine isn't touched until you restore.</p>
-    <div id="defaultDays"></div>
-    <button class="reset def-factory" id="defFactory">Factory reset template</button>
-  </div>
-
   <footer>
     <div class="unit-toggle" id="unitToggle">
       <button data-u="kg">KG</button>
       <button data-u="lb">LB</button>
     </div>
     <div class="foot-actions">
-      <button class="reset" id="editBtn">Edit current routine</button>
+      <button class="reset" id="editBtn">Edit routine</button>
       <button class="reset" id="resetBtn">Reset this week</button>
     </div>
-    <button class="reset restore-btn" id="restoreBtn" hidden>Restore default routine</button>
-    <button class="reset restore-btn" id="editDefaultBtn" hidden>Edit default template</button>
+    <button class="reset restore-btn" id="restoreBtn" hidden>Load starter routine</button>
+    <button class="reset restore-btn" id="factoryBtn" hidden>Factory reset</button>
     <div class="foot-note">Auto-resets every <b>Monday</b>. Your sets are saved on this device.</div>
   </footer>
 
   <div class="overlay" id="restoreOverlay">
     <div class="modal">
-      <h2>Restore default routine?</h2>
-      <p>This replaces your <b>current routine</b> with your <b>default template</b> — the version under "Edit default template". Any hand-edits to the current routine are overwritten. Your logged history (sets, PRs, bodyweight, diet) is kept.</p>
+      <h2>Load starter routine?</h2>
+      <p>This replaces your current routine with the ready-made starter routine. Any changes you've made to your routine are overwritten. Your logged history — sets, PRs, bodyweight, diet — is kept.</p>
       <div class="modal-actions">
         <button id="restoreCancel">Cancel</button>
-        <button class="confirm" id="restoreConfirm">Restore</button>
+        <button class="confirm" id="restoreConfirm">Load starter routine</button>
       </div>
     </div>
   </div>
 
   <div class="overlay" id="factoryOverlay">
     <div class="modal">
-      <h2>Factory reset template?</h2>
-      <p>This wipes your <b>default template</b> and rebuilds it from the original built-in routine. It only touches the template — your <b>current routine</b> stays as-is until you tap <b>Restore default</b>. Logged history is kept. This can't be undone.</p>
+      <h2>Factory reset?</h2>
+      <p>This clears every exercise from all days, leaving your empty day slots so you can build a routine from scratch. Your logged history — sets, PRs, bodyweight, diet — is kept. This can't be undone.</p>
       <div class="modal-actions">
         <button id="factoryCancel">Cancel</button>
         <button class="confirm" id="factoryConfirm">Factory reset</button>
@@ -1084,7 +1071,13 @@ function render(){
           const er=document.createElement('div'); er.className='ex-edit';
           er.innerHTML=
             '<div class="moves"><button class="move up" aria-label="Move up">▲</button><button class="move dn" aria-label="Move down">▼</button></div>'+
-            '<div class="fields"><input class="e-name" placeholder="Exercise name" aria-label="Exercise name"><input class="e-sets" placeholder="e.g. 4 × 6–8" aria-label="Sets and reps"></div>'+
+            '<div class="fields">'+
+              '<input class="e-name" placeholder="Exercise name" aria-label="Exercise name">'+
+              '<input class="e-sets" placeholder="e.g. 4 × 6–8" aria-label="Sets and reps">'+
+              '<button class="guide-toggle">ⓘ Guide</button>'+
+              '<div class="guide-edit"><label>TARGETS</label><input class="g-m" placeholder="e.g. Chest, triceps">'+
+              '<label>HOW TO</label><textarea class="g-h" placeholder="How to perform it…"></textarea></div>'+
+            '</div>'+
             '<button class="ex-del" aria-label="Delete exercise">×</button>';
           const nIn=er.querySelector('.e-name'), sIn=er.querySelector('.e-sets');
           nIn.value=e.n; sIn.value=e.s;
@@ -1095,6 +1088,14 @@ function render(){
           up.onclick=()=>{ if(i>0){ const t=day.ex[i-1]; day.ex[i-1]=day.ex[i]; day.ex[i]=t; save(); render(); } };
           dn.onclick=()=>{ if(i<day.ex.length-1){ const t=day.ex[i+1]; day.ex[i+1]=day.ex[i]; day.ex[i]=t; save(); render(); } };
           er.querySelector('.ex-del').onclick=()=>{ day.ex.splice(i,1); save(); render(); };
+          const gt=er.querySelector('.guide-toggle'), gedit=er.querySelector('.guide-edit');
+          const gm=er.querySelector('.g-m'), gh=er.querySelector('.g-h'), g=guideFor(e);
+          gm.value=(e.m!==undefined?e.m:g.m); gh.value=(e.h!==undefined?e.h:g.h);
+          if(openGuides.has(e.id)){ gt.classList.add('on'); gedit.classList.add('show'); }
+          gt.onclick=()=>{ if(openGuides.has(e.id))openGuides.delete(e.id); else openGuides.add(e.id);
+            gt.classList.toggle('on'); gedit.classList.toggle('show'); };
+          gm.oninput=()=>{ e.m=gm.value; save(); };
+          gh.oninput=()=>{ e.h=gh.value; save(); };
           inner.appendChild(er);
           return;
         }
@@ -1178,7 +1179,7 @@ function render(){
       if(editing){
         const addEx=document.createElement('button');
         addEx.className='add-ex'; addEx.textContent='+ Add exercise';
-        addEx.onclick=()=>{ day.ex.push({id:uid(), n:'New exercise', s:'3 × 10'}); save(); render(); };
+        addEx.onclick=()=>{ day.ex.push({id:uid(), n:'New exercise', s:'3 × 10', m:'', h:''}); save(); render(); };
         inner.appendChild(addEx);
       }
     }
@@ -1394,113 +1395,34 @@ document.getElementById('liftSelect').onchange=e=>renderLiftChart(e.target.value
 // Edit routine toggle
 const editBtn=document.getElementById('editBtn');
 const restoreBtn=document.getElementById('restoreBtn');
-const editDefaultBtn=document.getElementById('editDefaultBtn');
+const factoryBtn=document.getElementById('factoryBtn');
 editBtn.onclick=()=>{
   editing=!editing;
-  editBtn.textContent = editing ? 'Done editing' : 'Edit current routine';
+  editBtn.textContent = editing ? 'Done editing' : 'Edit routine';
   restoreBtn.hidden = !editing;
-  editDefaultBtn.hidden = !editing;
+  factoryBtn.hidden = !editing;
   openLoggers.clear();
   render();
   if(editing) window.scrollTo({top:0,behavior:'smooth'});
 };
 
-// ---- Default template editor ----
-function renderDefault(){
-  const wrap=document.getElementById('defaultDays'); wrap.innerHTML='';
-  state.defaultRoutine.forEach(day=>{
-    const card=document.createElement('div'); card.className='def-day day open';
-    const head=document.createElement('div'); head.className='day-edit-head';
-    head.innerHTML='<div class="de-name"></div><input class="focus-input" aria-label="Day focus"><button class="rest-toggle"></button>';
-    head.querySelector('.de-name').textContent=day.name;
-    const fi=head.querySelector('.focus-input'); fi.value=day.focus; fi.oninput=()=>{ day.focus=fi.value; save(); };
-    const rt=head.querySelector('.rest-toggle'); rt.textContent=day.rest?'REST':'TRAIN'; rt.classList.toggle('is-rest',day.rest);
-    rt.onclick=()=>{ day.rest=!day.rest; save(); renderDefault(); };
-    card.appendChild(head);
-
-    const body=document.createElement('div'); body.className='body';
-    const inner=document.createElement('div'); inner.className='body-inner';
-    if(day.rest){
-      const r=document.createElement('div'); r.className='rest-body'; r.textContent='Rest day. Tap TRAIN to add exercises.';
-      inner.appendChild(r);
-    } else {
-      day.ex.forEach((e,i)=>{
-        const er=document.createElement('div'); er.className='ex-edit';
-        er.innerHTML=
-          '<div class="moves"><button class="move up" aria-label="Move up">▲</button><button class="move dn" aria-label="Move down">▼</button></div>'+
-          '<div class="fields">'+
-            '<input class="e-name" placeholder="Exercise name" aria-label="Exercise name">'+
-            '<input class="e-sets" placeholder="e.g. 4 × 6–8" aria-label="Sets and reps">'+
-            '<button class="guide-toggle">ⓘ Guide</button>'+
-            '<div class="guide-edit"><label>TARGETS</label><input class="g-m" placeholder="e.g. Chest, triceps">'+
-            '<label>HOW TO</label><textarea class="g-h" placeholder="How to perform it…"></textarea></div>'+
-          '</div>'+
-          '<button class="ex-del" aria-label="Delete exercise">×</button>';
-        const nIn=er.querySelector('.e-name'), sIn=er.querySelector('.e-sets');
-        nIn.value=e.n; sIn.value=e.s;
-        nIn.oninput=()=>{ e.n=nIn.value; save(); };
-        sIn.oninput=()=>{ e.s=sIn.value; save(); };
-        const up=er.querySelector('.up'), dn=er.querySelector('.dn');
-        up.disabled=(i===0); dn.disabled=(i===day.ex.length-1);
-        up.onclick=()=>{ if(i>0){ const t=day.ex[i-1]; day.ex[i-1]=day.ex[i]; day.ex[i]=t; save(); renderDefault(); } };
-        dn.onclick=()=>{ if(i<day.ex.length-1){ const t=day.ex[i+1]; day.ex[i+1]=day.ex[i]; day.ex[i]=t; save(); renderDefault(); } };
-        er.querySelector('.ex-del').onclick=()=>{ day.ex.splice(i,1); save(); renderDefault(); };
-        const gt=er.querySelector('.guide-toggle'), gedit=er.querySelector('.guide-edit');
-        const gm=er.querySelector('.g-m'), gh=er.querySelector('.g-h'), g=guideFor(e);
-        gm.value=(e.m!==undefined?e.m:g.m); gh.value=(e.h!==undefined?e.h:g.h);
-        if(openGuides.has(e.id)){ gt.classList.add('on'); gedit.classList.add('show'); }
-        gt.onclick=()=>{ if(openGuides.has(e.id))openGuides.delete(e.id); else openGuides.add(e.id);
-          gt.classList.toggle('on'); gedit.classList.toggle('show'); };
-        gm.oninput=()=>{ e.m=gm.value; save(); };
-        gh.oninput=()=>{ e.h=gh.value; save(); };
-        inner.appendChild(er);
-      });
-      const add=document.createElement('button'); add.className='add-ex'; add.textContent='+ Add exercise';
-      add.onclick=()=>{ day.ex.push({id:uid(),n:'New exercise',s:'3 × 10',m:'',h:''}); save(); renderDefault(); };
-      inner.appendChild(add);
-    }
-    body.appendChild(inner); card.appendChild(body); wrap.appendChild(card);
-  });
-}
-function showDefaults(on){
-  document.querySelector('.tabs').hidden=on;
-  document.querySelector('footer').hidden=on;
-  document.getElementById('defaultView').hidden=!on;
-  document.getElementById('trainView').hidden = on ? true : currentTab!=='train';
-  document.getElementById('dietView').hidden = on ? true : currentTab!=='diet';
-  document.getElementById('progressView').hidden = on ? true : currentTab!=='progress';
-  if(on){ openGuides.clear(); renderDefault(); window.scrollTo({top:0,behavior:'smooth'}); }
-}
-editDefaultBtn.onclick=()=>showDefaults(true);
-document.getElementById('defDone').onclick=()=>{ showDefaults(false); if(currentTab==='progress') renderProgress(); };
-
-// Factory reset the template (two-tap confirm)
-const defFactory=document.getElementById('defFactory');
+// Factory reset — clear all exercises, keep the day slots
 const factoryOverlay=document.getElementById('factoryOverlay');
-let factoryArmed=false, factoryTimer=null;
-function disarmFactory(){ factoryArmed=false; defFactory.classList.remove('confirm-armed'); defFactory.textContent='Factory reset template'; if(factoryTimer)clearTimeout(factoryTimer); }
-defFactory.onclick=()=>{
-  if(!factoryArmed){
-    factoryArmed=true; defFactory.classList.add('confirm-armed'); defFactory.textContent='Tap again to confirm factory reset';
-    factoryTimer=setTimeout(disarmFactory,3500);
-    return;
-  }
-  disarmFactory();
-  factoryOverlay.classList.add('show');
-};
+factoryBtn.onclick=()=>factoryOverlay.classList.add('show');
 document.getElementById('factoryCancel').onclick=()=>factoryOverlay.classList.remove('show');
 document.getElementById('factoryConfirm').onclick=()=>{
-  state.defaultRoutine=seedDefault(); save(); renderDefault();
+  (state.routine||[]).forEach(day=>{ day.ex=[]; });
+  ROUTINE=state.routine; save(); render();
   factoryOverlay.classList.remove('show');
 };
 factoryOverlay.onclick=e=>{ if(e.target===factoryOverlay) factoryOverlay.classList.remove('show'); };
 
-// Restore default routine (copies your template over the live routine)
+// Load starter routine — copies the ready-made routine over your current one
 const restoreOverlay=document.getElementById('restoreOverlay');
 restoreBtn.onclick=()=>restoreOverlay.classList.add('show');
 document.getElementById('restoreCancel').onclick=()=>restoreOverlay.classList.remove('show');
 document.getElementById('restoreConfirm').onclick=()=>{
-  state.routine=deepCopy(state.defaultRoutine); ROUTINE=state.routine; save(); render();
+  state.routine=seedDefault(); ROUTINE=state.routine; save(); render();
   restoreOverlay.classList.remove('show');
 };
 restoreOverlay.onclick=e=>{ if(e.target===restoreOverlay) restoreOverlay.classList.remove('show'); };
