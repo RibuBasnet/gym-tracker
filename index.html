@@ -582,7 +582,7 @@
       <button class="reset" id="editBtn">Edit routine</button>
       <button class="reset" id="resetBtn">Reset this week</button>
     </div>
-    <button class="reset restore-btn" id="loadRoutineBtn" hidden>Load a routine</button>
+    <button class="reset restore-btn" id="loadRoutineBtn" hidden>Load a preset routine</button>
     <button class="reset restore-btn" id="factoryBtn" hidden>Factory reset</button>
     <div class="foot-note">Auto-resets every <b>Monday</b>. Your sets are saved on this device.</div>
   </footer>
@@ -622,7 +622,7 @@
 
   <div class="overlay" id="pickRoutineOverlay">
     <div class="modal">
-      <h2>Load a routine</h2>
+      <h2>Load a preset routine</h2>
       <p>Pick a ready-made routine. You'll get a confirmation before anything changes.</p>
       <div class="pick-list">
         <button class="pick-row" data-r="hybrid"><span class="pick-name">Calisthenics + weighted</span><span class="pick-desc">the hybrid</span></button>
@@ -984,6 +984,8 @@ function seedFrom(def, idPrefix){
 function seedDefault(){ return seedFrom(DEFAULT_ROUTINE, ''); }
 function seedWeighted(){ return seedFrom(WEIGHTED_ROUTINE, 'w-'); }
 function seedCalisthenics(){ return seedFrom(CALISTHENICS_ROUTINE, 'c-'); }
+// Fresh install / clean slate: the 7 day slots with no exercises (same shape as Factory reset).
+function seedEmpty(){ return seedDefault().map(function(d){ return {key:d.key,short:d.short,name:d.name,focus:d.focus,sub:d.sub,rest:d.rest,ex:[]}; }); }
 function seedRoutine(){ return deepCopy(state&&state.defaultRoutine?state.defaultRoutine:seedDefault()); }
 // Resolve guide text for display: exercise's own fields, else built-in library, else custom.
 function guideFor(ex){
@@ -1088,7 +1090,7 @@ async function load(){
   state.checks=state.checks||{}; state.logs=state.logs||{}; state.unit=state.unit||'kg'; state.history=state.history||{}; state.bodyweight=state.bodyweight||[];
   state.foods=state.foods||[]; state.diet=state.diet||{}; if(state.dietGoal===undefined) state.dietGoal=null;
   if(!state.defaultRoutine) state.defaultRoutine=seedDefault();
-  if(!state.routine) state.routine=deepCopy(state.defaultRoutine);
+  if(!state.routine) state.routine=seedEmpty();
   ROUTINE=state.routine;
   const cur=mondayId();
   if(state.weekId!==cur){
@@ -1652,7 +1654,7 @@ document.getElementById('loadCaliConfirm').onclick=()=>{
 };
 loadCaliOverlay.onclick=e=>{ if(e.target===loadCaliOverlay) loadCaliOverlay.classList.remove('show'); };
 
-// Load a routine — picker opens the matching confirm dialog
+// Load a preset routine — picker opens the matching confirm dialog
 const pickRoutineOverlay=document.getElementById('pickRoutineOverlay');
 loadRoutineBtn.onclick=()=>pickRoutineOverlay.classList.add('show');
 document.getElementById('pickRoutineCancel').onclick=()=>pickRoutineOverlay.classList.remove('show');
@@ -1757,7 +1759,7 @@ function applyImport(inc,mode){
     state.history=state.history||{}; state.bodyweight=state.bodyweight||[];
     state.foods=state.foods||[]; state.diet=state.diet||{}; if(state.dietGoal===undefined) state.dietGoal=null;
     if(!state.defaultRoutine) state.defaultRoutine=seedDefault();
-    if(!state.routine) state.routine=deepCopy(state.defaultRoutine);
+    if(!state.routine) state.routine=seedEmpty();
     ROUTINE=state.routine;
   } else { mergeData(inc); }
   save(); paintUnit(); render(); renderProgress(); if(typeof renderDiet==='function') renderDiet();
