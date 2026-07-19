@@ -474,7 +474,7 @@
   <div class="board">
     <div class="board-top">
       <div class="board-label" id="weekLabel">THIS WEEK</div>
-      <div class="tally"><span id="doneDays">0</span><span>/5 days</span></div>
+      <div class="tally"><span id="doneDays">0</span><span>/<span id="totalDays">5</span> days</span></div>
     </div>
     <div class="week" id="week"></div>
   </div>
@@ -985,7 +985,7 @@ function seedDefault(){ return seedFrom(DEFAULT_ROUTINE, ''); }
 function seedWeighted(){ return seedFrom(WEIGHTED_ROUTINE, 'w-'); }
 function seedCalisthenics(){ return seedFrom(CALISTHENICS_ROUTINE, 'c-'); }
 // Fresh install / clean slate: the 7 day slots with no exercises (same shape as Factory reset).
-function seedEmpty(){ return seedDefault().map(function(d){ return {key:d.key,short:d.short,name:d.name,focus:d.focus,sub:d.sub,rest:d.rest,ex:[]}; }); }
+function seedEmpty(){ return seedDefault().map(function(d){ return {key:d.key,short:d.short,name:d.name,focus:'',sub:'',rest:d.rest,ex:[]}; }); }
 function seedRoutine(){ return deepCopy(state&&state.defaultRoutine?state.defaultRoutine:seedDefault()); }
 // Resolve guide text for display: exercise's own fields, else built-in library, else custom.
 function guideFor(ex){
@@ -1177,6 +1177,7 @@ function buildScoreboard(){
     week.appendChild(c);
   });
   document.getElementById('doneDays').textContent=ROUTINE.filter(dayDone).length;
+  document.getElementById('totalDays').textContent=ROUTINE.filter(d=>!d.rest).length;
 }
 
 // Update derived UI (counts, checkmarks, summaries) WITHOUT rebuilding the
@@ -1237,14 +1238,14 @@ function render(){
       head.className='day-head';
       let right = day.rest
         ? '<span class="rest-badge">REST</span>'
-        : '<span class="progress'+(dayDone(day)?' full':'')+'" data-day="'+day.key+'">'+dayCount(day)+'/'+day.ex.length+'</span>';
+        : (day.ex.length ? '<span class="progress'+(dayDone(day)?' full':'')+'" data-day="'+day.key+'">'+dayCount(day)+'/'+day.ex.length+'</span>' : '');
       head.innerHTML=
         '<div class="head-left"><div class="name">'+day.name+(isToday?'<span class="todaytag">TODAY</span>':'')+'</div>'+
-        '<div class="focus"></div>'+
+        (day.focus?'<div class="focus"></div>':'')+
         (day.sub?'<div class="sub"></div>':'')+'</div>'+
         right+
         '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
-      head.querySelector('.focus').textContent=day.focus;
+      if(day.focus) head.querySelector('.focus').textContent=day.focus;
       if(day.sub) head.querySelector('.sub').textContent=day.sub;
       head.onclick=()=>{
         if(openDays.has(day.key)) openDays.delete(day.key); else openDays.add(day.key);
