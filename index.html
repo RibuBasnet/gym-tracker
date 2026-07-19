@@ -580,10 +580,11 @@
     </div>
     <div class="foot-actions">
       <button class="reset" id="editBtn">Edit routine</button>
+      <button class="reset" id="cancelEditBtn" hidden>Cancel</button>
       <button class="reset" id="resetBtn">Reset this week</button>
     </div>
     <button class="reset restore-btn" id="loadRoutineBtn" hidden>Load a preset routine</button>
-    <button class="reset restore-btn" id="factoryBtn" hidden>Factory reset</button>
+    <button class="reset restore-btn" id="factoryBtn" hidden>Clear routine</button>
     <div class="foot-note">Auto-resets every <b>Monday</b>. Your sets are saved on this device.</div>
   </footer>
 
@@ -637,11 +638,11 @@
 
   <div class="overlay" id="factoryOverlay">
     <div class="modal">
-      <h2>Factory reset?</h2>
-      <p>This clears every exercise from all days, leaving your empty day slots so you can build a routine from scratch. Your logged history — sets, PRs, bodyweight, diet — is kept. This can't be undone.</p>
+      <h2>Clear routine?</h2>
+      <p>This wipes your whole routine — every exercise, focus, and note — back to blank day slots so you can start fresh. Nothing in Diet or Progress is touched: your logged sets, PRs, bodyweight, and food are all kept. This can't be undone.</p>
       <div class="modal-actions">
         <button id="factoryCancel">Cancel</button>
-        <button class="confirm" id="factoryConfirm">Factory reset</button>
+        <button class="confirm" id="factoryConfirm">Confirm</button>
       </div>
     </div>
   </div>
@@ -984,7 +985,7 @@ function seedFrom(def, idPrefix){
 function seedDefault(){ return seedFrom(DEFAULT_ROUTINE, ''); }
 function seedWeighted(){ return seedFrom(WEIGHTED_ROUTINE, 'w-'); }
 function seedCalisthenics(){ return seedFrom(CALISTHENICS_ROUTINE, 'c-'); }
-// Fresh install / clean slate: the 7 day slots with no exercises (same shape as Factory reset).
+// Fresh install / clean slate: the 7 day slots, blank, no exercises (same as Clear routine).
 function seedEmpty(){ return seedDefault().map(function(d){ return {key:d.key,short:d.short,name:d.name,focus:'',sub:'',rest:d.rest,ex:[]}; }); }
 function seedRoutine(){ return deepCopy(state&&state.defaultRoutine?state.defaultRoutine:seedDefault()); }
 // Resolve guide text for display: exercise's own fields, else built-in library, else custom.
@@ -1605,25 +1606,44 @@ document.getElementById('liftSelect').onchange=e=>renderLiftChart(e.target.value
 const editBtn=document.getElementById('editBtn');
 const factoryBtn=document.getElementById('factoryBtn');
 const loadRoutineBtn=document.getElementById('loadRoutineBtn');
-editBtn.onclick=()=>{
-  editing=!editing;
+const cancelEditBtn=document.getElementById('cancelEditBtn');
+let routineSnapshot=null;
+function setEditUI(){
   editBtn.textContent = editing ? 'Done editing' : 'Edit routine';
   loadRoutineBtn.hidden = !editing;
   factoryBtn.hidden = !editing;
+  cancelEditBtn.hidden = !editing;
   document.getElementById('unitToggle').style.display = editing ? 'none' : '';
   document.getElementById('resetBtn').style.display = editing ? 'none' : '';
+}
+editBtn.onclick=()=>{
+  if(!editing){
+    editing=true;
+    routineSnapshot=deepCopy(state.routine);   // snapshot so Cancel can revert
+  } else {
+    editing=false;                              // Done editing — keep changes
+    routineSnapshot=null;
+  }
+  setEditUI();
   openLoggers.clear();
   render();
   if(editing) window.scrollTo({top:0,behavior:'smooth'});
 };
+cancelEditBtn.onclick=()=>{
+  if(routineSnapshot){ state.routine=routineSnapshot; ROUTINE=state.routine; save(); }
+  routineSnapshot=null;
+  editing=false;
+  setEditUI();
+  openLoggers.clear();
+  render();
+};
 
-// Factory reset — clear all exercises, keep the day slots
+// Clear routine — reset to blank day slots (no exercises, focus, or notes)
 const factoryOverlay=document.getElementById('factoryOverlay');
 factoryBtn.onclick=()=>factoryOverlay.classList.add('show');
 document.getElementById('factoryCancel').onclick=()=>factoryOverlay.classList.remove('show');
 document.getElementById('factoryConfirm').onclick=()=>{
-  (state.routine||[]).forEach(day=>{ day.ex=[]; });
-  ROUTINE=state.routine; save(); render();
+  state.routine=seedEmpty(); ROUTINE=state.routine; save(); render();
   factoryOverlay.classList.remove('show');
 };
 factoryOverlay.onclick=e=>{ if(e.target===factoryOverlay) factoryOverlay.classList.remove('show'); };
