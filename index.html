@@ -1401,6 +1401,8 @@ editBtn.onclick=()=>{
   editBtn.textContent = editing ? 'Done editing' : 'Edit routine';
   restoreBtn.hidden = !editing;
   factoryBtn.hidden = !editing;
+  document.getElementById('unitToggle').style.display = editing ? 'none' : '';
+  document.getElementById('resetBtn').style.display = editing ? 'none' : '';
   openLoggers.clear();
   render();
   if(editing) window.scrollTo({top:0,behavior:'smooth'});
