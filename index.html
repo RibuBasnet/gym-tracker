@@ -820,6 +820,14 @@ function joinSR(sets,reps){
   if(sets&&reps) return sets+' × '+reps;
   return sets||reps||'';
 }
+// Human-readable target: "3 sets × 10 reps" (falls back to raw text for odd formats).
+function fmtSR(s){
+  const r=splitSR(s);
+  if(!(r.sets && r.reps)) return String(s||'');
+  const setW = r.sets==='1' ? 'set' : 'sets';
+  const repW = r.reps==='1' ? 'rep' : 'reps';
+  return r.sets+' '+setW+' × '+r.reps+' '+repW;
+}
 // The editable master template: default exercises + their guide text baked in.
 function seedDefault(){
   return DEFAULT_ROUTINE.map(d=>({
@@ -1152,7 +1160,7 @@ function render(){
           '<button class="ex-i" aria-label="How to do this">i</button>'+
           '<svg class="ex-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
         row.querySelector('.nm').textContent=e.n;
-        row.querySelector('.ex-sets').textContent=e.s;
+        { const _g=fmtSR(e.s); row.querySelector('.ex-sets').textContent = _g ? 'Goal: '+_g : ''; }
         row.querySelector('.ex-summary').textContent=summaryText(id);
         { const pr=prInfo(id); if(pr&&pr.isPR) row.classList.add('is-pr'); }
 
