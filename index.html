@@ -243,6 +243,12 @@
   body.editing #editBtn{background:var(--accent);border-color:var(--accent);color:#fff;}
   body.editing .board{display:none;}
   .restore-btn{color:var(--muted);}
+  .pick-list{display:flex;flex-direction:column;gap:8px;margin:0 0 18px;}
+  .pick-row{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;text-align:left;
+    background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;}
+  .pick-row:hover{border-color:var(--accent);}
+  .pick-name{font-family:"Oswald",sans-serif;font-weight:600;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);}
+  .pick-desc{font-size:12px;color:var(--muted);}
   .restore-btn:hover{color:var(--accent);}
   .day-edit-head{display:flex;align-items:center;gap:10px;padding:14px;}
   .de-name{font-family:"Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.14em;
@@ -571,9 +577,7 @@
       <button class="reset" id="editBtn">Edit routine</button>
       <button class="reset" id="resetBtn">Reset this week</button>
     </div>
-    <button class="reset restore-btn" id="restoreBtn" hidden>Load calisthenics + weighted routine</button>
-    <button class="reset restore-btn" id="loadWeightedBtn" hidden>Load weighted routine</button>
-    <button class="reset restore-btn" id="loadCaliBtn" hidden>Load calisthenics routine</button>
+    <button class="reset restore-btn" id="loadRoutineBtn" hidden>Load a routine</button>
     <button class="reset restore-btn" id="factoryBtn" hidden>Factory reset</button>
     <div class="foot-note">Auto-resets every <b>Monday</b>. Your sets are saved on this device.</div>
   </footer>
@@ -607,6 +611,21 @@
       <div class="modal-actions">
         <button id="loadCaliCancel">Cancel</button>
         <button class="confirm" id="loadCaliConfirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="pickRoutineOverlay">
+    <div class="modal">
+      <h2>Load a routine</h2>
+      <p>Pick a ready-made routine. You'll get a confirmation before anything changes.</p>
+      <div class="pick-list">
+        <button class="pick-row" data-r="hybrid"><span class="pick-name">Calisthenics + weighted</span><span class="pick-desc">the hybrid</span></button>
+        <button class="pick-row" data-r="weighted"><span class="pick-name">Weighted</span><span class="pick-desc">gym / free weights</span></button>
+        <button class="pick-row" data-r="cali"><span class="pick-name">Calisthenics</span><span class="pick-desc">bodyweight only</span></button>
+      </div>
+      <div class="modal-actions">
+        <button id="pickRoutineCancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -1561,16 +1580,12 @@ document.getElementById('liftSelect').onchange=e=>renderLiftChart(e.target.value
 
 // Edit routine toggle
 const editBtn=document.getElementById('editBtn');
-const restoreBtn=document.getElementById('restoreBtn');
 const factoryBtn=document.getElementById('factoryBtn');
-const loadWeightedBtn=document.getElementById('loadWeightedBtn');
-const loadCaliBtn=document.getElementById('loadCaliBtn');
+const loadRoutineBtn=document.getElementById('loadRoutineBtn');
 editBtn.onclick=()=>{
   editing=!editing;
   editBtn.textContent = editing ? 'Done editing' : 'Edit routine';
-  restoreBtn.hidden = !editing;
-  loadWeightedBtn.hidden = !editing;
-  loadCaliBtn.hidden = !editing;
+  loadRoutineBtn.hidden = !editing;
   factoryBtn.hidden = !editing;
   document.getElementById('unitToggle').style.display = editing ? 'none' : '';
   document.getElementById('resetBtn').style.display = editing ? 'none' : '';
@@ -1592,7 +1607,6 @@ factoryOverlay.onclick=e=>{ if(e.target===factoryOverlay) factoryOverlay.classLi
 
 // Load calisthenics + weighted routine — copies the ready-made routine over your current one
 const restoreOverlay=document.getElementById('restoreOverlay');
-restoreBtn.onclick=()=>restoreOverlay.classList.add('show');
 document.getElementById('restoreCancel').onclick=()=>restoreOverlay.classList.remove('show');
 document.getElementById('restoreConfirm').onclick=()=>{
   state.routine=seedDefault(); ROUTINE=state.routine; save(); render();
@@ -1602,7 +1616,6 @@ restoreOverlay.onclick=e=>{ if(e.target===restoreOverlay) restoreOverlay.classLi
 
 // Load weighted routine
 const loadWeightedOverlay=document.getElementById('loadWeightedOverlay');
-loadWeightedBtn.onclick=()=>loadWeightedOverlay.classList.add('show');
 document.getElementById('loadWeightedCancel').onclick=()=>loadWeightedOverlay.classList.remove('show');
 document.getElementById('loadWeightedConfirm').onclick=()=>{
   state.routine=seedWeighted(); ROUTINE=state.routine; save(); render();
@@ -1612,13 +1625,27 @@ loadWeightedOverlay.onclick=e=>{ if(e.target===loadWeightedOverlay) loadWeighted
 
 // Load calisthenics routine
 const loadCaliOverlay=document.getElementById('loadCaliOverlay');
-loadCaliBtn.onclick=()=>loadCaliOverlay.classList.add('show');
 document.getElementById('loadCaliCancel').onclick=()=>loadCaliOverlay.classList.remove('show');
 document.getElementById('loadCaliConfirm').onclick=()=>{
   state.routine=seedCalisthenics(); ROUTINE=state.routine; save(); render();
   loadCaliOverlay.classList.remove('show');
 };
 loadCaliOverlay.onclick=e=>{ if(e.target===loadCaliOverlay) loadCaliOverlay.classList.remove('show'); };
+
+// Load a routine — picker opens the matching confirm dialog
+const pickRoutineOverlay=document.getElementById('pickRoutineOverlay');
+loadRoutineBtn.onclick=()=>pickRoutineOverlay.classList.add('show');
+document.getElementById('pickRoutineCancel').onclick=()=>pickRoutineOverlay.classList.remove('show');
+pickRoutineOverlay.onclick=e=>{ if(e.target===pickRoutineOverlay) pickRoutineOverlay.classList.remove('show'); };
+pickRoutineOverlay.querySelectorAll('.pick-row').forEach(row=>{
+  row.onclick=()=>{
+    pickRoutineOverlay.classList.remove('show');
+    const r=row.dataset.r;
+    if(r==='hybrid') restoreOverlay.classList.add('show');
+    else if(r==='weighted') loadWeightedOverlay.classList.add('show');
+    else if(r==='cali') loadCaliOverlay.classList.add('show');
+  };
+});
 
 const infoOverlay=document.getElementById('infoOverlay');
 let infoEx=null;
