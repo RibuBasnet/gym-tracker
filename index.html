@@ -2075,8 +2075,8 @@ function gcRow(label,id,val,unit){
 }
 function renderGoalCalc(t){
   document.getElementById('goalCalc').innerHTML=
-    gcRow('Calories','tKcal',t.kcal,'kcal')+gcRow('Protein','tP',t.p,'g')+
-    gcRow('Carbs','tC',t.c,'g')+gcRow('Fat','tF',t.f,'g')+gcRow('Water','tWater',t.water,'ml');
+    gcRow('Calories','tKcal',t.kcal,'kcal')+gcRow('Fat','tF',t.f,'g')+
+    gcRow('Carbs','tC',t.c,'g')+gcRow('Protein','tP',t.p,'g')+gcRow('Water','tWater',t.water,'ml');
   ['tKcal','tP','tC','tF','tWater'].forEach(function(id){
     document.getElementById(id).addEventListener('input',function(){ goalManual=true; });
   });
