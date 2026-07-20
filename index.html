@@ -410,8 +410,8 @@
     font-family:"Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.06em;cursor:pointer;}
   .sf-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 2px;}
   .newfood-form{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
-  .nf-macros{display:flex;gap:8px;}
-  .nf-macros .set-field{flex:1;min-width:0;}
+  .nf-macros{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .nf-macros .set-field{min-width:0;}
   .nf-save{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
   .nf-actions{display:flex;gap:10px;}
   .nf-actions .reset,.nf-actions .add-set{flex:1;}
@@ -746,10 +746,10 @@
         </div>
         <div class="nf-per" id="nfPerHint">Macros per 100 g</div>
         <div class="nf-macros">
-          <div class="set-field"><input id="nfKcal" type="text" inputmode="decimal" placeholder="kcal"></div>
-          <div class="set-field"><input id="nfP" type="text" inputmode="decimal" placeholder="P"><span class="unit">g</span></div>
-          <div class="set-field"><input id="nfC" type="text" inputmode="decimal" placeholder="C"><span class="unit">g</span></div>
-          <div class="set-field"><input id="nfF" type="text" inputmode="decimal" placeholder="F"><span class="unit">g</span></div>
+          <div class="set-field"><input id="nfKcal" type="text" inputmode="decimal" placeholder="0"><span class="unit">kcal</span></div>
+          <div class="set-field"><input id="nfP" type="text" inputmode="decimal" placeholder="0"><span class="unit">protein</span></div>
+          <div class="set-field"><input id="nfC" type="text" inputmode="decimal" placeholder="0"><span class="unit">carbs</span></div>
+          <div class="set-field"><input id="nfF" type="text" inputmode="decimal" placeholder="0"><span class="unit">fat</span></div>
         </div>
         <div class="nf-eat" id="nfEatRow"><span class="nf-eat-lbl">Eating now</span><div class="nf-amt" id="nfAmount"></div></div>
       </div>
