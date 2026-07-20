@@ -2258,19 +2258,22 @@ function scanFail(msg){
   document.getElementById('scanAgain').onclick=startScan;
 }
 function renderScanResult(food){
+  // Open the full editable form (same as Add manually), pre-filled with the scanned product.
+  // Scanned values are per 100 g; you can switch basis / edit values before adding.
   document.getElementById('scanStatus').textContent='';
-  const box=document.getElementById('scanResults');
-  const row=document.createElement('div'); row.className='sf-row';
-  row.innerHTML='<div class="sf-info"><div class="sf-name">'+escapeHtml(food.name)+'</div>'+
-    '<div class="sf-sub">'+food.kcal+' kcal &middot; P'+food.p+' C'+food.c+' F'+food.f+' / 100 g</div></div>'+
-    amountControl({basis:'g'})+'<button class="sf-add">+ Add</button>';
-  row.querySelector('.sf-add').onclick=function(){
-    const a=readAmount(row);
-    askAddConfirm({id:uid(), name:food.name, basis:'g', kcal:food.kcal, p:food.p, c:food.c, f:food.f}, a.amount, a.unit);
-  };
-  box.appendChild(row);
-  const again=document.createElement('button'); again.className='sf-add'; again.style.marginTop='10px'; again.textContent='Scan another';
-  again.onclick=startScan; box.appendChild(again);
+  editingFoodId=null;
+  document.getElementById('nfName').value=food.name||'';
+  document.querySelectorAll('#nfBasis button').forEach(x=>x.classList.toggle('on',x.dataset.v==='g'));
+  setServ('serving');
+  document.getElementById('nfKcal').value=(food.kcal!=null?food.kcal:'');
+  document.getElementById('nfP').value=(food.p!=null?food.p:'');
+  document.getElementById('nfC').value=(food.c!=null?food.c:'');
+  document.getElementById('nfF').value=(food.f!=null?food.f:'');
+  setManualMode(false);
+  renderNfAmount();
+  if(typeof stopCamera==='function') stopCamera();
+  document.getElementById('scanOverlay').classList.remove('show');
+  manualOverlay.classList.add('show');
 }
 async function startScan(){
   const status=document.getElementById('scanStatus');
