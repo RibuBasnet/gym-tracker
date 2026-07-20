@@ -1846,7 +1846,16 @@ let dietDate = todayISO();
 let waterUndo = [];
 let goalSex='m', goalGoal='maintain', goalManual=false;
 const ACT_DEFAULT = 1.55;
-function dnum(v){ if(v==null) return null; v=(''+v).trim(); if(v==='') return null; const n=parseFloat(v); return isNaN(n)?null:n; }
+function dnum(v){ if(v==null) return null; v=(''+v).trim().replace(/,/g,'.'); if(v==='') return null; const n=parseFloat(v); return isNaN(n)?null:n; }
+// Accept comma decimals (e.g. "1,5") in any decimal field — normalise to a dot as you type.
+document.addEventListener('input',function(e){
+  const t=e.target;
+  if(t && t.tagName==='INPUT' && t.getAttribute('inputmode')==='decimal' && t.value.indexOf(',')>=0){
+    const p=t.selectionStart;
+    t.value=t.value.replace(/,/g,'.');
+    try{ t.setSelectionRange(p,p); }catch(_){}
+  }
+});
 function r0(n){ return Math.round(n); }
 function r10(n){ return Math.round(n/10)*10; }
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=(s==null?'':''+s); return d.innerHTML; }
