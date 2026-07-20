@@ -1935,7 +1935,7 @@ function renderDiet(){
     html+='<div class="kcal-big">'+tot.kcal+' <span>/ '+t.kcal+' kcal</span></div>';
     html+='<div class="macro-row"><span class="rem '+(kOver?'over':'ok')+'">'+(kOver?('over by '+Math.abs(remK)+' kcal'):(remK+' kcal left'))+'</span></div>';
     html+='<div class="bar"><div class="bar-fill '+(kOver?'over':'')+'" style="width:'+barPct(tot.kcal,t.kcal)+'%"></div></div>';
-    [['Protein','p'],['Carbs','c'],['Fat','f']].forEach(function(rw){
+    [['Fat','f'],['Carbs','c'],['Protein','p']].forEach(function(rw){
       const label=rw[0], key=rw[1], cv=tot[key], tv=t[key], rem=tv-cv, over=rem<0;
       html+='<div class="macro-row"><span class="lbl">'+label+'</span>'+
         '<span class="val">'+cv+' / '+tv+' g <span class="rem '+(over?'over':'ok')+'">('+(over?('+'+Math.abs(rem)):(rem+' left'))+')</span></span></div>';
