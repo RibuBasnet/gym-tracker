@@ -393,7 +393,12 @@
   .food-item:first-child{border-top:none;}
   .fi-name{font-size:14px;}
   .fi-macros{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);margin-top:2px;}
-  .fi-kcal{font-family:"Oswald",sans-serif;font-weight:600;font-size:15px;white-space:nowrap;}
+  .fi-info{flex:1;min-width:0;}
+  .fi-serv{color:var(--muted);font-size:12px;}
+  .fi-right{display:flex;align-items:center;gap:8px;}
+  .fi-kcalbox{display:flex;flex-direction:column;align-items:flex-end;line-height:1;}
+  .fi-kcal{font-family:"Oswald",sans-serif;font-weight:600;font-size:16px;white-space:nowrap;}
+  .fi-kcal-cap{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:1px;}
   .fi-del{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 4px;}
   .fi-del:hover{color:var(--accent);}
   .food-empty,.sf-empty{color:var(--muted);font-size:12px;line-height:1.5;padding:6px 2px;}
@@ -1952,9 +1957,9 @@ function renderDiet(){
     fl.innerHTML='';
     items.forEach(function(it){
       const row=document.createElement('div'); row.className='food-item';
-      row.innerHTML='<div><div class="fi-name">'+escapeHtml(it.name)+'</div>'+
-        '<div class="fi-macros">P'+r0(it.p||0)+' · C'+r0(it.c||0)+' · F'+r0(it.f||0)+(it.serv?(' · '+escapeHtml(it.serv)):'')+'</div></div>'+
-        '<div style="display:flex;align-items:center;gap:8px"><span class="fi-kcal">'+r0(it.kcal||0)+'</span>'+(ro?'':'<button class="fi-del" aria-label="Remove">×</button>')+'</div>';
+      row.innerHTML='<div class="fi-info"><div class="fi-name">'+escapeHtml(it.name)+(it.serv?(' · <span class="fi-serv">'+escapeHtml(it.serv)+'</span>'):'')+'</div>'+
+        '<div class="fi-macros">fat '+mg(it.f)+' g · carbs '+mg(it.c)+' g · protein '+mg(it.p)+' g</div></div>'+
+        '<div class="fi-right"><div class="fi-kcalbox"><span class="fi-kcal">'+r0(it.kcal||0)+'</span><span class="fi-kcal-cap">kcal</span></div>'+(ro?'':'<button class="fi-del" aria-label="Remove">×</button>')+'</div>';
       const del=row.querySelector('.fi-del'); if(del) del.onclick=function(){ const dd=ensureDietDay(dietDate); dd.items=dd.items.filter(x=>x.id!==it.id); save(); renderDiet(); };
       fl.appendChild(row);
     });
