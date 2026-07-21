@@ -1152,6 +1152,9 @@ function dayDone(day){
 }
 function dayCount(day){ return day.ex.filter(e=>exDone(e)).length; }
 function targetSets(s){ const m=String(s).split('×')[0].match(/\d+/); const n=m?parseInt(m[0],10):3; return Math.min(Math.max(n,1),8); }
+function targetReps(s){ return splitSR(s).reps || ''; }
+// True only for sets created by checking the box (tagged auto) and left untouched.
+function looksAutoFilled(id, ex){ const a=state.logs[id]; if(!Array.isArray(a)||!a.length) return false; return a.length===targetSets(ex.s) && a.every(s=>s&&s.auto===true); }
 function summaryText(id){
   const a=state.logs[id]; if(!Array.isArray(a)) return '';
   return a.filter(s=>s&&String(s.r).trim()!=='')
@@ -1361,8 +1364,20 @@ function render(){
         row.querySelector('.ex-i').onclick=(ev)=>{ ev.stopPropagation(); openInfo(e); };
         row.querySelector('.box').onclick=(ev)=>{
           ev.stopPropagation();
-          if(state.checks[id]) delete state.checks[id]; else state.checks[id]=true;
-          save(); refreshStatus();
+          let changedLogs=false;
+          if(state.checks[id]){
+            delete state.checks[id];
+            if(looksAutoFilled(id,e)){ state.logs[id]=[]; changedLogs=true; }
+          } else {
+            state.checks[id]=true;
+            if(!hasReps(id)){
+              const reps=targetReps(e.s);
+              state.logs[id]=Array.from({length:targetSets(e.s)},()=>({w:'',r:reps,auto:true}));
+              changedLogs=true;
+            }
+          }
+          save();
+          if(changedLogs) render(); else refreshStatus();
         };
         const toggleLog=()=>{
           if(openLoggers.has(id)){ openLoggers.delete(id); }
@@ -1403,8 +1418,8 @@ function render(){
               '<button class="set-del" aria-label="Remove set">×</button>';
             const wIn=sr.querySelector('.w'), rIn=sr.querySelector('.r');
             wIn.value=st.w||''; rIn.value=st.r||'';
-            wIn.oninput=()=>{ st.w=wIn.value; save(); refreshStatus(); };
-            rIn.oninput=()=>{ st.r=rIn.value; save(); refreshStatus(); };
+            wIn.oninput=()=>{ st.w=wIn.value; st.auto=false; save(); refreshStatus(); };
+            rIn.oninput=()=>{ st.r=rIn.value; st.auto=false; save(); refreshStatus(); };
             sr.querySelector('.set-del').onclick=()=>{ sets.splice(si,1); save(); render(); };
             li.appendChild(sr);
           });
