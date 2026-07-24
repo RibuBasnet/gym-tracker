@@ -1708,6 +1708,7 @@ function saveRoutineEditor(){
   if(state.activeRoutineId==='cust-'+cid){ state.routine=deepCopy(editBuffer); }
   editing=false; editBuffer=null; editingCustomId=null; editingName='';
   ROUTINE=state.routine; setEditUI(); openLoggers.clear(); save(); render();
+  renderRoutineList(); pickRoutineOverlay.classList.add('show');
 }
 function cancelRoutineEditor(){
   editing=false; editBuffer=null; editingCustomId=null; editingName='';
