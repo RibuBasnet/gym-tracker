@@ -264,6 +264,8 @@
   .routine-name-bar .rn-input{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 13px;color:var(--ink);font-size:15px;font-family:inherit;}
   .routine-name-bar .rn-input.need{border-color:var(--accent);}
   body.editing .tabs{display:none;}
+  .ex-search{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 13px;color:var(--ink);font-size:14px;font-family:inherit;margin-bottom:12px;}
+  .ex-picker-list{max-height:48vh;overflow-y:auto;}
   .restore-btn:hover{color:var(--accent);}
   .day-edit-head{display:flex;align-items:center;gap:10px;padding:14px;}
   .de-name{font-family:"Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.14em;
@@ -644,6 +646,18 @@
       <div class="modal-actions">
         <button id="routineConfirmCancel">Cancel</button>
         <button class="confirm" id="routineConfirmOk">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="exPickerOverlay">
+    <div class="modal">
+      <h2>Add an exercise</h2>
+      <p>Pick one to fill in its target &amp; guide automatically, or add your own.</p>
+      <input id="exPickerSearch" class="ex-search" type="text" placeholder="Search exercises…" autocomplete="off">
+      <div class="pick-list ex-picker-list" id="exPickerList"></div>
+      <div class="modal-actions">
+        <button id="exPickerCancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -1455,7 +1469,7 @@ function render(){
       if(editing){
         const addEx=document.createElement('button');
         addEx.className='add-ex'; addEx.textContent='+ Add exercise';
-        addEx.onclick=()=>{ day.ex.push({id:uid(), n:'New exercise', s:'3 × 10', m:'', h:''}); save(); render(); };
+        addEx.onclick=()=>openExPicker(day.key);
         inner.appendChild(addEx);
       }
     }
@@ -1791,6 +1805,29 @@ factoryBtn.onclick=()=>factoryOverlay.classList.add('show');
 document.getElementById('factoryCancel').onclick=()=>factoryOverlay.classList.remove('show');
 document.getElementById('factoryConfirm').onclick=()=>{ editBuffer=seedEmpty(); ROUTINE=editBuffer; render(); factoryOverlay.classList.remove('show'); };
 factoryOverlay.onclick=e=>{ if(e.target===factoryOverlay) factoryOverlay.classList.remove('show'); };
+
+// ---- Exercise picker (fills target & guide from the library; or add a custom one) ----
+const exPickerOverlay=document.getElementById('exPickerOverlay');
+let exPickerDayKey=null;
+function openExPicker(dayKey){ exPickerDayKey=dayKey; document.getElementById('exPickerSearch').value=''; renderExPicker(''); exPickerOverlay.classList.add('show'); }
+function addExerciseToDay(ex){ const day=ROUTINE.find(d=>d.key===exPickerDayKey); if(day){ day.ex.push(ex); } exPickerOverlay.classList.remove('show'); render(); }
+function renderExPicker(filter){
+  const box=document.getElementById('exPickerList'); box.innerHTML='';
+  const custom=document.createElement('button'); custom.className='pick-row pick-add'; custom.textContent='+ Custom exercise';
+  custom.onclick=()=>addExerciseToDay({id:uid(), n:'New exercise', s:'3 × 10', m:'', h:''});
+  box.appendChild(custom);
+  const q=(filter||'').trim().toLowerCase();
+  Object.keys(HOWTO).filter(n=>!q||n.toLowerCase().indexOf(q)>=0||String(HOWTO[n].m||'').toLowerCase().indexOf(q)>=0).forEach(n=>{
+    const g=HOWTO[n]; const btn=document.createElement('button'); btn.className='pick-row';
+    btn.innerHTML='<span class="pick-name">'+escapeHtml(n)+'</span>'+(g.m?'<span class="pick-desc">'+escapeHtml(g.m)+'</span>':'');
+    btn.onclick=()=>addExerciseToDay({id:uid(), n:n, s:'3 × 10', m:g.m||'', h:g.h||''});
+    box.appendChild(btn);
+  });
+  if(q && box.children.length===1){ const e=document.createElement('div'); e.className='pick-empty'; e.textContent='No match — use + Custom exercise above.'; box.appendChild(e); }
+}
+document.getElementById('exPickerSearch').oninput=function(){ renderExPicker(this.value); };
+document.getElementById('exPickerCancel').onclick=()=>exPickerOverlay.classList.remove('show');
+exPickerOverlay.onclick=e=>{ if(e.target===exPickerOverlay) exPickerOverlay.classList.remove('show'); };
 
 const infoOverlay=document.getElementById('infoOverlay');
 let infoEx=null;
