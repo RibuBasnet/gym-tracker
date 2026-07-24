@@ -253,6 +253,16 @@
   .pick-row:hover{border-color:var(--accent);}
   .pick-name{font-family:"Oswald",sans-serif;font-weight:600;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);}
   .pick-desc{font-size:12px;color:var(--muted);}
+  .pick-inuse{display:inline-block;margin-left:8px;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;vertical-align:middle;}
+  .pick-sep{margin:16px 2px 4px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+  .pick-empty{color:var(--muted);font-size:12px;padding:2px 2px 6px;}
+  .pick-add{align-items:center;text-align:center;color:var(--accent);font-family:"Oswald",sans-serif;font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:14px;border-style:dashed;}
+  #caDelete .pick-name{color:var(--accent);}
+  #routineConfirmOk.danger{background:var(--accent);border-color:var(--accent);}
+  .routine-name-bar{margin-bottom:16px;}
+  .routine-name-bar .rn-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  .routine-name-bar .rn-input{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 13px;color:var(--ink);font-size:15px;font-family:inherit;}
+  .routine-name-bar .rn-input.need{border-color:var(--accent);}
   .restore-btn:hover{color:var(--accent);}
   .day-edit-head{display:flex;align-items:center;gap:10px;padding:14px;}
   .de-name{font-family:"Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.14em;
@@ -591,59 +601,48 @@
       <button data-u="lb">LB</button>
     </div>
     <div class="foot-actions">
-      <button class="reset" id="editBtn">Edit routine</button>
+      <button class="reset" id="loadListBtn">Load a routine</button>
+      <button class="reset" id="editBtn" hidden>Save</button>
       <button class="reset" id="cancelEditBtn" hidden>Cancel</button>
       <button class="reset" id="resetBtn">Reset this week</button>
     </div>
-    <button class="reset restore-btn" id="loadRoutineBtn" hidden>Load a preset routine</button>
     <button class="reset restore-btn" id="factoryBtn" hidden>Clear routine</button>
     <div class="foot-note">Auto-resets every <b>Monday</b>. Your sets are saved on this device.</div>
   </footer>
 
-  <div class="overlay" id="restoreOverlay">
-    <div class="modal">
-      <h2>Load calisthenics + weighted routine?</h2>
-      <p>This replaces your current routine with the ready-made calisthenics + weighted routine. Any changes you've made to your routine are overwritten. Your logged history — sets, PRs, bodyweight, diet — is kept.</p>
-      <div class="modal-actions">
-        <button id="restoreCancel">Cancel</button>
-        <button class="confirm" id="restoreConfirm">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="overlay" id="loadWeightedOverlay">
-    <div class="modal">
-      <h2>Load weighted routine?</h2>
-      <p>This replaces your current routine with the ready-made weighted routine. Any changes you've made to your routine are overwritten. Your logged history — sets, PRs, bodyweight, diet — is kept.</p>
-      <div class="modal-actions">
-        <button id="loadWeightedCancel">Cancel</button>
-        <button class="confirm" id="loadWeightedConfirm">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="overlay" id="loadCaliOverlay">
-    <div class="modal">
-      <h2>Load calisthenics routine?</h2>
-      <p>This replaces your current routine with the ready-made calisthenics routine. Any changes you've made to your routine are overwritten. Your logged history — sets, PRs, bodyweight, diet — is kept.</p>
-      <div class="modal-actions">
-        <button id="loadCaliCancel">Cancel</button>
-        <button class="confirm" id="loadCaliConfirm">Confirm</button>
-      </div>
-    </div>
-  </div>
-
   <div class="overlay" id="pickRoutineOverlay">
     <div class="modal">
-      <h2>Load a preset routine</h2>
-      <p>Pick a ready-made routine. You'll get a confirmation before anything changes.</p>
+      <h2>Load a routine</h2>
+      <p>Tap a built-in to load it. Tap one of your own routines for options (edit, load, or delete). Making or editing a routine doesn't change what you're training with until you load it.</p>
+      <div class="pick-list"></div>
+      <div class="modal-actions">
+        <button id="pickRoutineCancel">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="customActionOverlay">
+    <div class="modal">
+      <h2></h2>
+      <p>What would you like to do with this routine?</p>
       <div class="pick-list">
-        <button class="pick-row" data-r="hybrid"><span class="pick-name">Calisthenics + weighted</span><span class="pick-desc">the hybrid</span></button>
-        <button class="pick-row" data-r="weighted"><span class="pick-name">Weighted</span><span class="pick-desc">gym / free weights</span></button>
-        <button class="pick-row" data-r="cali"><span class="pick-name">Calisthenics</span><span class="pick-desc">bodyweight only</span></button>
+        <button class="pick-row" id="caEdit"><span class="pick-name">Edit</span><span class="pick-desc">change exercises, days &amp; name</span></button>
+        <button class="pick-row" id="caLoad"><span class="pick-name">Load</span><span class="pick-desc">train with this routine</span></button>
+        <button class="pick-row" id="caDelete"><span class="pick-name">Delete</span><span class="pick-desc">remove this routine for good</span></button>
       </div>
       <div class="modal-actions">
-        <button id="pickRoutineCancel">Cancel</button>
+        <button id="caCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="routineConfirmOverlay">
+    <div class="modal">
+      <h2></h2>
+      <p></p>
+      <div class="modal-actions">
+        <button id="routineConfirmCancel">Cancel</button>
+        <button class="confirm" id="routineConfirmOk">Confirm</button>
       </div>
     </div>
   </div>
@@ -1019,6 +1018,17 @@ function seedCalisthenics(){ return seedFrom(CALISTHENICS_ROUTINE, 'c-'); }
 // Fresh install / clean slate: the 7 day slots, blank, no exercises (same as Clear routine).
 function seedEmpty(){ return seedDefault().map(function(d){ return {key:d.key,short:d.short,name:d.name,focus:'',sub:'',rest:d.rest,ex:[]}; }); }
 function seedRoutine(){ return deepCopy(state&&state.defaultRoutine?state.defaultRoutine:seedDefault()); }
+// Infer which routine is loaded (for the "In use" tag) from the exercise-id prefix of the live routine.
+function detectActiveId(){
+  const r=state.routine||[];
+  for(const d of r){ if(d.rest||!d.ex||!d.ex.length) continue; const id=String((d.ex[0]||{}).id||'');
+    if(/^w-/.test(id)) return 'builtin-weighted';
+    if(/^c-/.test(id)) return 'builtin-cali';
+    if(/^(mon|tue|wed|thu|fri|sat|sun)-\d/.test(id)) return 'builtin-hybrid';
+    return '';
+  }
+  return '';
+}
 // Resolve guide text for display: exercise's own fields, else built-in library, else custom.
 function guideFor(ex){
   if(ex && (ex.m||ex.h)) return {m:ex.m||'', h:ex.h||''};
@@ -1124,6 +1134,7 @@ async function load(){
   if(!state.defaultRoutine) state.defaultRoutine=seedDefault();
   if(!state.routine) state.routine=seedEmpty();
   ROUTINE=state.routine;
+  state.customRoutines=state.customRoutines||[]; if(state.activeRoutineId===undefined) state.activeRoutineId=detectActiveId();
   const cur=mondayId();
   if(state.weekId!==cur){
     // archive the finished week's logged sets before starting fresh
@@ -1132,7 +1143,7 @@ async function load(){
       const weeks=Object.keys(state.history).sort();
       while(weeks.length>26){ delete state.history[weeks.shift()]; } // keep ~6 months
     }
-    state={weekId:cur, checks:{}, logs:{}, unit:state.unit, history:state.history, bodyweight:state.bodyweight, routine:state.routine, defaultRoutine:state.defaultRoutine, foods:state.foods, diet:state.diet, dietGoal:state.dietGoal};
+    state={weekId:cur, checks:{}, logs:{}, unit:state.unit, history:state.history, bodyweight:state.bodyweight, routine:state.routine, defaultRoutine:state.defaultRoutine, foods:state.foods, diet:state.diet, dietGoal:state.dietGoal, customRoutines:state.customRoutines, activeRoutineId:state.activeRoutineId};
     ROUTINE=state.routine;
     save();
   }
@@ -1236,12 +1247,20 @@ function refreshStatus(){
 }
 
 function render(){
+  ROUTINE = (editing && editBuffer) ? editBuffer : state.routine;
   document.getElementById('weekLabel').textContent = weekRangeLabel();
   const tk=todayKey();
   document.body.classList.toggle('editing', editing);
   buildScoreboard();
 
   const wrap=document.getElementById('days'); wrap.innerHTML='';
+  if(editing){
+    const nb=document.createElement('div'); nb.className='routine-name-bar';
+    nb.innerHTML='<div class="rn-label">Routine name</div><input id="routineNameInput" class="rn-input" placeholder="Name this routine">';
+    const inp=nb.querySelector('input'); inp.value=editingName||'';
+    inp.oninput=()=>{ editingName=inp.value; inp.classList.remove('need'); };
+    wrap.appendChild(nb);
+  }
   ROUTINE.forEach(day=>{
     const isToday=day.key===tk;
     const card=document.createElement('div');
@@ -1648,93 +1667,126 @@ document.getElementById('bwAdd').onclick=()=>{
 // Lift selector
 document.getElementById('liftSelect').onchange=e=>renderLiftChart(e.target.value);
 
-// Edit routine toggle
-const editBtn=document.getElementById('editBtn');
-const factoryBtn=document.getElementById('factoryBtn');
-const loadRoutineBtn=document.getElementById('loadRoutineBtn');
+// ---------- Routine library: locked built-ins + custom save/load/delete ----------
+const editBtn=document.getElementById('editBtn');            // "Save" in the editor
 const cancelEditBtn=document.getElementById('cancelEditBtn');
-let routineSnapshot=null;
+const factoryBtn=document.getElementById('factoryBtn');      // Clear routine (editor build tool)
+const loadListBtn=document.getElementById('loadListBtn');    // opens the routine list
+const pickRoutineOverlay=document.getElementById('pickRoutineOverlay');
+const customActionOverlay=document.getElementById('customActionOverlay');
+const routineConfirmOverlay=document.getElementById('routineConfirmOverlay');
+
+let editBuffer=null, editingCustomId=null, editingName='';
+
 function setEditUI(){
-  editBtn.textContent = editing ? 'Done editing' : 'Edit routine';
-  loadRoutineBtn.hidden = !editing;
-  factoryBtn.hidden = !editing;
-  cancelEditBtn.hidden = !editing;
+  editBtn.hidden=!editing;
+  cancelEditBtn.hidden=!editing;
+  factoryBtn.hidden=!editing;
+  loadListBtn.hidden=editing;
   document.getElementById('unitToggle').style.display = editing ? 'none' : '';
   document.getElementById('resetBtn').style.display = editing ? 'none' : '';
 }
-editBtn.onclick=()=>{
-  if(!editing){
-    editing=true;
-    routineSnapshot=deepCopy(state.routine);   // snapshot so Cancel can revert
-  } else {
-    editing=false;                              // Done editing — keep changes
-    routineSnapshot=null;
-  }
-  setEditUI();
-  openLoggers.clear();
-  render();
-  if(editing) window.scrollTo({top:0,behavior:'smooth'});
-};
-cancelEditBtn.onclick=()=>{
-  if(routineSnapshot){ state.routine=routineSnapshot; ROUTINE=state.routine; save(); }
-  routineSnapshot=null;
-  editing=false;
-  setEditUI();
-  openLoggers.clear();
-  render();
-};
 
-// Clear routine — reset to blank day slots (no exercises, focus, or notes)
+function getCustom(id){ return (state.customRoutines||[]).find(c=>c.id===id)||null; }
+
+// ---- Editor (only ever edits a custom; built-ins are locked) ----
+function openRoutineEditor(customId){
+  if(customId){ const c=getCustom(customId); if(!c) return; editingCustomId=customId; editingName=c.name; editBuffer=deepCopy(c.routine); }
+  else { editingCustomId=null; editingName=''; editBuffer=seedEmpty(); }
+  editing=true; ROUTINE=editBuffer; setEditUI(); openLoggers.clear();
+  pickRoutineOverlay.classList.remove('show'); customActionOverlay.classList.remove('show');
+  render(); window.scrollTo({top:0,behavior:'smooth'});
+}
+function saveRoutineEditor(){
+  const name=(editingName||'').trim();
+  if(!name){ const inp=document.getElementById('routineNameInput'); if(inp){ inp.classList.add('need'); inp.focus(); } return; }
+  state.customRoutines=state.customRoutines||[];
+  let cid=editingCustomId;
+  if(cid){ const c=getCustom(cid); if(c){ c.name=name; c.routine=deepCopy(editBuffer); } }
+  else { cid=uid(); state.customRoutines.push({id:cid, name:name, routine:deepCopy(editBuffer)}); }
+  // Save only saves — but if you're editing the routine you're training with, it also refreshes the live week.
+  if(state.activeRoutineId==='cust-'+cid){ state.routine=deepCopy(editBuffer); }
+  editing=false; editBuffer=null; editingCustomId=null; editingName='';
+  ROUTINE=state.routine; setEditUI(); openLoggers.clear(); save(); render();
+}
+function cancelRoutineEditor(){
+  editing=false; editBuffer=null; editingCustomId=null; editingName='';
+  ROUTINE=state.routine; setEditUI(); openLoggers.clear(); render();
+}
+editBtn.onclick=saveRoutineEditor;
+cancelEditBtn.onclick=cancelRoutineEditor;
+
+// ---- Load (built-in or custom) ----
+function loadRoutine(kind){
+  if(kind==='hybrid'){ state.routine=seedDefault(); state.activeRoutineId='builtin-hybrid'; }
+  else if(kind==='weighted'){ state.routine=seedWeighted(); state.activeRoutineId='builtin-weighted'; }
+  else if(kind==='cali'){ state.routine=seedCalisthenics(); state.activeRoutineId='builtin-cali'; }
+  else { const c=getCustom(kind); if(!c) return; state.routine=deepCopy(c.routine); state.activeRoutineId='cust-'+c.id; }
+  ROUTINE=state.routine; save(); render();
+}
+
+// ---- Generic confirm (used for load-replaces-current and delete) ----
+let routineConfirmCb=null;
+function askRoutineConfirm(title, msg, okLabel, danger, cb){
+  routineConfirmOverlay.querySelector('h2').textContent=title;
+  routineConfirmOverlay.querySelector('p').textContent=msg;
+  const ok=document.getElementById('routineConfirmOk'); ok.textContent=okLabel||'Confirm';
+  ok.classList.toggle('danger', !!danger);
+  routineConfirmCb=cb; routineConfirmOverlay.classList.add('show');
+}
+document.getElementById('routineConfirmCancel').onclick=()=>{ routineConfirmOverlay.classList.remove('show'); routineConfirmCb=null; };
+document.getElementById('routineConfirmOk').onclick=()=>{ const cb=routineConfirmCb; routineConfirmOverlay.classList.remove('show'); routineConfirmCb=null; if(cb) cb(); };
+routineConfirmOverlay.onclick=e=>{ if(e.target===routineConfirmOverlay){ routineConfirmOverlay.classList.remove('show'); routineConfirmCb=null; } };
+
+// ---- The routine list ----
+function inUseTag(rid){ return state.activeRoutineId===rid ? '<span class="pick-inuse">In use</span>' : ''; }
+function renderRoutineList(){
+  const box=pickRoutineOverlay.querySelector('.pick-list'); box.innerHTML='';
+  [['builtin-hybrid','hybrid','Calisthenics + weighted','the hybrid'],
+   ['builtin-weighted','weighted','Weighted','gym / free weights'],
+   ['builtin-cali','cali','Calisthenics','bodyweight only']].forEach(b=>{
+    const btn=document.createElement('button'); btn.className='pick-row'; btn.dataset.r=b[1];
+    btn.innerHTML='<span class="pick-name">'+b[2]+inUseTag(b[0])+'</span><span class="pick-desc">'+b[3]+'</span>';
+    btn.onclick=()=>askRoutineConfirm('Load '+b[2]+'?','This replaces the routine currently on screen. Your logged sets, PRs, bodyweight and diet are all kept.','Load',false,()=>{ loadRoutine(b[1]); pickRoutineOverlay.classList.remove('show'); });
+    box.appendChild(btn);
+  });
+  const sep=document.createElement('div'); sep.className='pick-sep'; sep.textContent='Your routines'; box.appendChild(sep);
+  const customs=state.customRoutines||[];
+  if(!customs.length){ const e=document.createElement('div'); e.className='pick-empty'; e.textContent='None yet — make one with + Custom routine below.'; box.appendChild(e); }
+  customs.forEach(c=>{
+    const btn=document.createElement('button'); btn.className='pick-row'; btn.dataset.cust=c.id;
+    btn.innerHTML='<span class="pick-name">'+escapeHtml(c.name)+inUseTag('cust-'+c.id)+'</span><span class="pick-desc">tap for options</span>';
+    btn.onclick=()=>openCustomActions(c.id);
+    box.appendChild(btn);
+  });
+  const add=document.createElement('button'); add.className='pick-row pick-add'; add.textContent='+ Custom routine';
+  add.onclick=()=>openRoutineEditor(null);
+  box.appendChild(add);
+}
+loadListBtn.onclick=()=>{ renderRoutineList(); pickRoutineOverlay.classList.add('show'); };
+document.getElementById('pickRoutineCancel').onclick=()=>pickRoutineOverlay.classList.remove('show');
+pickRoutineOverlay.onclick=e=>{ if(e.target===pickRoutineOverlay) pickRoutineOverlay.classList.remove('show'); };
+
+// ---- Custom actions popup (Edit / Load / Delete) ----
+let popupCustomId=null;
+function openCustomActions(id){ const c=getCustom(id); if(!c) return; popupCustomId=id; customActionOverlay.querySelector('h2').textContent=c.name; customActionOverlay.classList.add('show'); }
+document.getElementById('caEdit').onclick=()=>{ const id=popupCustomId; customActionOverlay.classList.remove('show'); openRoutineEditor(id); };
+document.getElementById('caLoad').onclick=()=>{ const c=getCustom(popupCustomId); if(!c) return; const id=popupCustomId; customActionOverlay.classList.remove('show'); askRoutineConfirm('Load '+c.name+'?','This replaces the routine currently on screen. Your logged sets, PRs, bodyweight and diet are all kept.','Load',false,()=>{ loadRoutine(id); pickRoutineOverlay.classList.remove('show'); }); };
+document.getElementById('caDelete').onclick=()=>{ const c=getCustom(popupCustomId); if(!c) return; const id=popupCustomId; customActionOverlay.classList.remove('show'); askRoutineConfirm('Delete '+c.name+'?','This permanently deletes this routine. This can\'t be undone. Your logged history is kept.','Delete',true,()=>{ deleteCustom(id); }); };
+document.getElementById('caCancel').onclick=()=>customActionOverlay.classList.remove('show');
+customActionOverlay.onclick=e=>{ if(e.target===customActionOverlay) customActionOverlay.classList.remove('show'); };
+function deleteCustom(id){
+  state.customRoutines=(state.customRoutines||[]).filter(c=>c.id!==id);
+  if(state.activeRoutineId==='cust-'+id) state.activeRoutineId='';
+  save(); renderRoutineList(); pickRoutineOverlay.classList.add('show');
+}
+
+// ---- Clear routine (editor build tool — blanks the buffer; saved only when you press Save) ----
 const factoryOverlay=document.getElementById('factoryOverlay');
 factoryBtn.onclick=()=>factoryOverlay.classList.add('show');
 document.getElementById('factoryCancel').onclick=()=>factoryOverlay.classList.remove('show');
-document.getElementById('factoryConfirm').onclick=()=>{
-  state.routine=seedEmpty(); ROUTINE=state.routine; save(); render();
-  factoryOverlay.classList.remove('show');
-};
+document.getElementById('factoryConfirm').onclick=()=>{ editBuffer=seedEmpty(); ROUTINE=editBuffer; render(); factoryOverlay.classList.remove('show'); };
 factoryOverlay.onclick=e=>{ if(e.target===factoryOverlay) factoryOverlay.classList.remove('show'); };
-
-// Load calisthenics + weighted routine — copies the ready-made routine over your current one
-const restoreOverlay=document.getElementById('restoreOverlay');
-document.getElementById('restoreCancel').onclick=()=>restoreOverlay.classList.remove('show');
-document.getElementById('restoreConfirm').onclick=()=>{
-  state.routine=seedDefault(); ROUTINE=state.routine; save(); render();
-  restoreOverlay.classList.remove('show');
-};
-restoreOverlay.onclick=e=>{ if(e.target===restoreOverlay) restoreOverlay.classList.remove('show'); };
-
-// Load weighted routine
-const loadWeightedOverlay=document.getElementById('loadWeightedOverlay');
-document.getElementById('loadWeightedCancel').onclick=()=>loadWeightedOverlay.classList.remove('show');
-document.getElementById('loadWeightedConfirm').onclick=()=>{
-  state.routine=seedWeighted(); ROUTINE=state.routine; save(); render();
-  loadWeightedOverlay.classList.remove('show');
-};
-loadWeightedOverlay.onclick=e=>{ if(e.target===loadWeightedOverlay) loadWeightedOverlay.classList.remove('show'); };
-
-// Load calisthenics routine
-const loadCaliOverlay=document.getElementById('loadCaliOverlay');
-document.getElementById('loadCaliCancel').onclick=()=>loadCaliOverlay.classList.remove('show');
-document.getElementById('loadCaliConfirm').onclick=()=>{
-  state.routine=seedCalisthenics(); ROUTINE=state.routine; save(); render();
-  loadCaliOverlay.classList.remove('show');
-};
-loadCaliOverlay.onclick=e=>{ if(e.target===loadCaliOverlay) loadCaliOverlay.classList.remove('show'); };
-
-// Load a preset routine — picker opens the matching confirm dialog
-const pickRoutineOverlay=document.getElementById('pickRoutineOverlay');
-loadRoutineBtn.onclick=()=>pickRoutineOverlay.classList.add('show');
-document.getElementById('pickRoutineCancel').onclick=()=>pickRoutineOverlay.classList.remove('show');
-pickRoutineOverlay.onclick=e=>{ if(e.target===pickRoutineOverlay) pickRoutineOverlay.classList.remove('show'); };
-pickRoutineOverlay.querySelectorAll('.pick-row').forEach(row=>{
-  row.onclick=()=>{
-    pickRoutineOverlay.classList.remove('show');
-    const r=row.dataset.r;
-    if(r==='hybrid') restoreOverlay.classList.add('show');
-    else if(r==='weighted') loadWeightedOverlay.classList.add('show');
-    else if(r==='cali') loadCaliOverlay.classList.add('show');
-  };
-});
 
 const infoOverlay=document.getElementById('infoOverlay');
 let infoEx=null;
@@ -1828,6 +1880,7 @@ function applyImport(inc,mode){
     if(!state.defaultRoutine) state.defaultRoutine=seedDefault();
     if(!state.routine) state.routine=seedEmpty();
     ROUTINE=state.routine;
+    state.customRoutines=state.customRoutines||[]; if(state.activeRoutineId===undefined) state.activeRoutineId=detectActiveId();
   } else { mergeData(inc); }
   save(); paintUnit(); render(); renderProgress(); if(typeof renderDiet==='function') renderDiet();
 }
