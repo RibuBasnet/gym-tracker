@@ -263,6 +263,7 @@
   .routine-name-bar .rn-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
   .routine-name-bar .rn-input{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 13px;color:var(--ink);font-size:15px;font-family:inherit;}
   .routine-name-bar .rn-input.need{border-color:var(--accent);}
+  body.editing .tabs{display:none;}
   .restore-btn:hover{color:var(--accent);}
   .day-edit-head{display:flex;align-items:center;gap:10px;padding:14px;}
   .de-name{font-family:"Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.14em;
@@ -1638,6 +1639,7 @@ overlay.onclick=e=>{ if(e.target===overlay) overlay.classList.remove('show'); };
 // Tabs
 document.querySelectorAll('.tab').forEach(t=>{
   t.onclick=()=>{
+    if(editing) return;   // locked in the routine editor — leave via Save or Cancel
     document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
     const v=t.dataset.v; currentTab=v;
     document.querySelector('footer').hidden = v!=='train';
