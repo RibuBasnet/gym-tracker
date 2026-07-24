@@ -1713,6 +1713,7 @@ function saveRoutineEditor(){
 function cancelRoutineEditor(){
   editing=false; editBuffer=null; editingCustomId=null; editingName='';
   ROUTINE=state.routine; setEditUI(); openLoggers.clear(); render();
+  renderRoutineList(); pickRoutineOverlay.classList.add('show');
 }
 editBtn.onclick=saveRoutineEditor;
 cancelEditBtn.onclick=cancelRoutineEditor;
