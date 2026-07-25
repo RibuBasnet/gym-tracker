@@ -609,7 +609,7 @@
       <button class="reset" id="loadListBtn">Load a routine</button>
       <button class="reset" id="editBtn" hidden>Save</button>
       <button class="reset" id="cancelEditBtn" hidden>Cancel</button>
-      <button class="reset" id="resetBtn">Reset this week</button>
+      <button class="reset" id="resetBtn">Clean slate</button>
     </div>
     <button class="reset restore-btn" id="factoryBtn" hidden>Clear routine</button>
     <div class="foot-note">Auto-resets every <b>Monday</b>. Your sets are saved on this device.</div>
@@ -677,11 +677,11 @@
 
   <div class="overlay" id="overlay">
     <div class="modal">
-      <h2>Reset this week?</h2>
-      <p>This clears every check-off and logged set for the current week. Your routine stays the same.</p>
+      <h2>Load a clean slate?</h2>
+      <p>This replaces the routine on screen with empty days — a blank Train tab. Your logged sets, saved routines and diet are all kept.</p>
       <div class="modal-actions">
         <button id="cancelBtn">Cancel</button>
-        <button class="confirm" id="confirmBtn">Reset</button>
+        <button class="confirm" id="confirmBtn">Load</button>
       </div>
     </div>
   </div>
@@ -1647,9 +1647,7 @@ const overlay=document.getElementById('overlay');
 document.getElementById('resetBtn').onclick=()=>overlay.classList.add('show');
 document.getElementById('cancelBtn').onclick=()=>overlay.classList.remove('show');
 document.getElementById('confirmBtn').onclick=()=>{
-  state.checks={}; state.logs={}; openLoggers.clear(); save(); render();
-  if(!document.getElementById('progressView').hidden) renderProgress();
-  overlay.classList.remove('show');
+  loadRoutine('empty'); overlay.classList.remove('show');
 };
 overlay.onclick=e=>{ if(e.target===overlay) overlay.classList.remove('show'); };
 
@@ -1766,8 +1764,7 @@ function renderRoutineList(){
   const box=pickRoutineOverlay.querySelector('.pick-list'); box.innerHTML='';
   [['builtin-hybrid','hybrid','Calisthenics + weighted','the hybrid'],
    ['builtin-weighted','weighted','Weighted','gym / free weights'],
-   ['builtin-cali','cali','Calisthenics','bodyweight only'],
-   ['empty','empty','Clean slate','empty days — a blank Train tab']].forEach(b=>{
+   ['builtin-cali','cali','Calisthenics','bodyweight only']].forEach(b=>{
     const btn=document.createElement('button'); btn.className='pick-row'; btn.dataset.r=b[1];
     btn.innerHTML='<span class="pick-name">'+b[2]+inUseTag(b[0])+'</span><span class="pick-desc">'+b[3]+'</span>';
     btn.onclick=()=>askRoutineConfirm('Load '+b[2]+'?','This replaces the routine currently on screen. Your logged sets, PRs, bodyweight and diet are all kept.','Load',false,()=>{ loadRoutine(b[1]); pickRoutineOverlay.classList.remove('show'); });
