@@ -115,6 +115,11 @@
   .ex-info{flex:1;min-width:0;}
   .ex-name{font-size:15px;font-weight:500;transition:.2s;}
   .ex-sets{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);margin-top:2px;}
+  .ww-chip{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:5px;padding:0 6px;line-height:1.5;cursor:pointer;}
+  .ww-chip.bw{color:var(--muted);border-color:var(--line);}
+  .lift-toggle{display:flex;gap:6px;margin:10px 0 12px;}
+  .lift-toggle .lt-btn{flex:1;background:var(--bg);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:7px 0;font-size:12px;font-family:"Oswald",sans-serif;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;}
+  .lift-toggle .lt-btn.on{color:var(--ink);border-color:var(--accent);}
   .ex.checked .box{background:var(--accent);border-color:var(--accent);}
   .ex.checked .box::after{opacity:1;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");}
@@ -561,6 +566,7 @@
     <div class="pcard">
       <div class="board-label">LIFT PROGRESS</div>
       <select class="lift-select" id="liftSelect"></select>
+      <div class="lift-toggle"><button class="lt-btn on" data-m="top">Top set</button><button class="lt-btn" data-m="volume">Volume</button></div>
       <div class="lift-stats" id="liftStats"></div>
       <div class="chart" id="liftChart"></div>
     </div>
@@ -660,6 +666,20 @@
       <div class="pick-list ex-picker-list" id="exPickerList"></div>
       <div class="modal-actions">
         <button id="exPickerCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="workWeightOverlay">
+    <div class="modal">
+      <h2>Working weight</h2>
+      <p id="wwName"></p>
+      <p style="margin-top:-4px">The weight you're using for this exercise. A checkmark logs your goal reps at this weight, and it carries forward until you change it. Tap Bodyweight for an unweighted move.</p>
+      <div class="set-field" style="margin:4px 0 14px"><input id="wwInput" type="text" inputmode="decimal" placeholder="e.g. 40"><span class="unit" id="wwUnit">kg</span></div>
+      <div class="modal-actions">
+        <button id="wwBodyweight">Bodyweight</button>
+        <button id="wwCancel">Cancel</button>
+        <button class="confirm" id="wwSave">Save</button>
       </div>
     </div>
   </div>
@@ -1152,7 +1172,7 @@ async function load(){
   if(!state.defaultRoutine) state.defaultRoutine=seedDefault();
   if(!state.routine) state.routine=seedEmpty();
   ROUTINE=state.routine;
-  state.customRoutines=state.customRoutines||[]; if(state.activeRoutineId===undefined) state.activeRoutineId=detectActiveId();
+  state.customRoutines=state.customRoutines||[]; if(state.activeRoutineId===undefined) state.activeRoutineId=detectActiveId(); state.workWeight=state.workWeight||{};
   const cur=mondayId();
   if(state.weekId!==cur){
     // archive the finished week's logged sets before starting fresh
@@ -1161,7 +1181,7 @@ async function load(){
       const weeks=Object.keys(state.history).sort();
       while(weeks.length>26){ delete state.history[weeks.shift()]; } // keep ~6 months
     }
-    state={weekId:cur, checks:{}, logs:{}, unit:state.unit, history:state.history, bodyweight:state.bodyweight, routine:state.routine, defaultRoutine:state.defaultRoutine, foods:state.foods, diet:state.diet, dietGoal:state.dietGoal, customRoutines:state.customRoutines, activeRoutineId:state.activeRoutineId};
+    state={weekId:cur, checks:{}, logs:{}, unit:state.unit, history:state.history, bodyweight:state.bodyweight, routine:state.routine, defaultRoutine:state.defaultRoutine, foods:state.foods, diet:state.diet, dietGoal:state.dietGoal, customRoutines:state.customRoutines, activeRoutineId:state.activeRoutineId, workWeight:state.workWeight};
     ROUTINE=state.routine;
     save();
   }
@@ -1184,6 +1204,8 @@ function targetSets(s){ const m=String(s).split('×')[0].match(/\d+/); const n=m
 function targetReps(s){ return splitSR(s).reps || ''; }
 // True only for sets created by checking the box (tagged auto) and left untouched.
 function looksAutoFilled(id, ex){ const a=state.logs[id]; if(!Array.isArray(a)||!a.length) return false; return a.length===targetSets(ex.s) && a.every(s=>s&&s.auto===true); }
+function ww(id){ const v=(state.workWeight||{})[id]; return (v===undefined||v===null||v==='')?null:v; }
+function isWeighted(id){ return ww(id)!==null; }
 function summaryText(id){
   const a=state.logs[id]; if(!Array.isArray(a)) return '';
   return a.filter(s=>s&&String(s.r).trim()!=='')
@@ -1394,7 +1416,11 @@ function render(){
           '<button class="ex-i" aria-label="How to do this">i</button>'+
           '<svg class="ex-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
         row.querySelector('.nm').textContent=e.n;
-        { const _g=fmtSR(e.s); row.querySelector('.ex-sets').textContent = _g ? 'Goal: '+_g : ''; }
+        { const _g=fmtSR(e.s); const _wv=ww(id);
+          const _chip='<span class="ww-chip'+(_wv!=null?'':' bw')+'">'+(_wv!=null?(mg(_wv)+' '+state.unit):'BW')+'</span>';
+          row.querySelector('.ex-sets').innerHTML = (_g?('Goal: '+_g+' · '):'')+_chip;
+          const _c=row.querySelector('.ww-chip'); if(_c) _c.onclick=(ev)=>{ ev.stopPropagation(); openWorkWeight(id, e.n); };
+        }
         row.querySelector('.ex-summary').textContent=summaryText(id);
         { const pr=prInfo(id); if(pr&&pr.isPR) row.classList.add('is-pr'); }
 
@@ -1408,8 +1434,8 @@ function render(){
           } else {
             state.checks[id]=true;
             if(!hasReps(id)){
-              const reps=targetReps(e.s);
-              state.logs[id]=Array.from({length:targetSets(e.s)},()=>({w:'',r:reps,auto:true}));
+              const reps=targetReps(e.s); const _wv=ww(id); const _w=_wv!=null?String(_wv):'';
+              state.logs[id]=Array.from({length:targetSets(e.s)},()=>({w:_w,r:reps,auto:true}));
               changedLogs=true;
             }
           }
@@ -1455,7 +1481,7 @@ function render(){
               '<button class="set-del" aria-label="Remove set">×</button>';
             const wIn=sr.querySelector('.w'), rIn=sr.querySelector('.r');
             wIn.value=st.w||''; rIn.value=st.r||'';
-            wIn.oninput=()=>{ st.w=wIn.value; st.auto=false; save(); refreshStatus(); };
+            wIn.oninput=()=>{ st.w=wIn.value; st.auto=false; const _v=dnum(wIn.value); if(_v!=null&&_v>0){ state.workWeight=state.workWeight||{}; state.workWeight[id]=_v; } save(); refreshStatus(); };
             rIn.oninput=()=>{ st.r=rIn.value; st.auto=false; save(); refreshStatus(); };
             sr.querySelector('.set-del').onclick=()=>{ sets.splice(si,1); save(); render(); };
             li.appendChild(sr);
@@ -1534,14 +1560,19 @@ function lineChartSVG(pts, color, emptyMsg){
   return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="progress chart">'+g+'</svg>';
 }
 
-function liftSeries(id){
-  const out=[];
+let liftMetric='top';
+function liftSeries(id, metric){
+  const weighted=isWeighted(id); const out=[];
   const collect=(logs,wk)=>{ const a=(logs||{})[id]; if(!Array.isArray(a))return;
-    const weighted=[], bw=[];
-    a.forEach(s=>{ if(!s)return; const r=parseInt(String(s.r).trim(),10); if(!r)return; const wS=String(s.w).trim();
-      if(wS==='') bw.push(r); else{ const w=parseFloat(wS); if(!isNaN(w)) weighted.push(w*(1+r/30)); } });
-    if(weighted.length) out.push({wk,y:Math.round(Math.max(...weighted)),bw:false});
-    else if(bw.length) out.push({wk,y:Math.max(...bw),bw:true});
+    if(weighted){
+      let topW=null, topReps=0, vol=0, any=false;
+      a.forEach(s=>{ if(!s)return; const wS=String(s.w).trim(); if(wS==='')return; const w=parseFloat(wS); if(isNaN(w))return; const r=parseInt(String(s.r).trim(),10)||0; any=true; vol+=w*r; if(topW===null||w>topW){ topW=w; topReps=r; } });
+      if(any) out.push({wk, y:(metric==='volume'?Math.round(vol):topW), reps:topReps, bw:false});
+    } else {
+      let maxR=0, totR=0, any=false;
+      a.forEach(s=>{ if(!s)return; const r=parseInt(String(s.r).trim(),10); if(!r)return; any=true; totR+=r; if(r>maxR)maxR=r; });
+      if(any) out.push({wk, y:(metric==='volume'?totR:maxR), reps:maxR, bw:true});
+    }
   };
   Object.keys(state.history||{}).sort().forEach(wk=>collect(state.history[wk].logs,wk));
   collect(state.logs, state.weekId);
@@ -1555,25 +1586,45 @@ function buildLiftOptions(sel){
     const id=e.id;
     const o=document.createElement('option'); o.value=id; o.textContent=e.n; sel.appendChild(o);
     if(firstAny===null) firstAny=id;
-    if(firstWithData===null && liftSeries(id).length) firstWithData=id;
+    if(firstWithData===null && liftSeries(id,'top').length) firstWithData=id;
   }); });
   sel.value=firstWithData||firstAny||'';
 }
 
 function renderLiftChart(id){
-  const s=liftSeries(id);
-  const isBW = s.length && s.every(e=>e.bw);
-  const unitTxt = isBW?' reps':(' '+state.unit);
+  const weighted=isWeighted(id);
+  const s=liftSeries(id, liftMetric);
+  const wunit=' '+state.unit;
   document.getElementById('liftChart').innerHTML =
     lineChartSVG(s.map(e=>({x:fmtWeek(e.wk), y:e.y})), '#FF4438',
       'Log this exercise for a couple of weeks and your progress line appears here.');
   const stats=document.getElementById('liftStats');
-  if(!s.length){ stats.innerHTML='<span>No sets logged for this exercise yet.</span>'; return; }
+  if(!s.length){ stats.innerHTML='<span>No '+(weighted?'weighted ':'')+'sets logged for this exercise yet.</span>'; return; }
   const latest=s[s.length-1], first=s[0], best=Math.max(...s.map(e=>e.y));
-  let html='<span>Latest: <b>'+latest.y+unitTxt+'</b></span>';
-  html+='<span class="pr">Best: <b>'+best+unitTxt+'</b></span>';
-  if(s.length>1){ const d=latest.y-first.y; html+='<span>Since start: <b>'+(d>0?'+':'')+d+unitTxt+'</b></span>'; }
-  html+='<span style="width:100%">tracking '+(isBW?'best reps':'estimated 1-rep max')+'</span>';
+  let html='';
+  if(liftMetric==='top'){
+    if(weighted){
+      html+='<span>Latest: <b>'+mg(latest.y)+wunit+(latest.reps?(' × '+latest.reps):'')+'</b></span>';
+      html+='<span class="pr">Best: <b>'+mg(best)+wunit+'</b></span>';
+      if(s.length>1){ const d=latest.y-first.y; html+='<span>Since start: <b>'+(d>0?'+':'')+mg(d)+wunit+'</b></span>'; }
+      html+='<span style="width:100%">top set · heaviest weight each week</span>';
+    } else {
+      html+='<span>Latest: <b>'+latest.y+' reps</b></span>';
+      html+='<span class="pr">Best: <b>'+best+' reps</b></span>';
+      if(s.length>1){ const d=latest.y-first.y; html+='<span>Since start: <b>'+(d>0?'+':'')+d+' reps</b></span>'; }
+      html+='<span style="width:100%">top set · most reps each week</span>';
+    }
+  } else {
+    if(weighted){
+      html+='<span>Latest: <b>'+mg(latest.y)+wunit+'</b></span>';
+      html+='<span class="pr">Best: <b>'+mg(best)+wunit+'</b></span>';
+      html+='<span style="width:100%">volume · total weight × reps each week</span>';
+    } else {
+      html+='<span>Latest: <b>'+latest.y+' reps</b></span>';
+      html+='<span class="pr">Best: <b>'+best+' reps</b></span>';
+      html+='<span style="width:100%">volume · total reps each week</span>';
+    }
+  }
   stats.innerHTML=html;
 }
 
@@ -1683,6 +1734,7 @@ document.getElementById('bwAdd').onclick=()=>{
 
 // Lift selector
 document.getElementById('liftSelect').onchange=e=>renderLiftChart(e.target.value);
+document.querySelectorAll('.lift-toggle .lt-btn').forEach(b=>{ b.onclick=()=>{ liftMetric=b.dataset.m; document.querySelectorAll('.lift-toggle .lt-btn').forEach(x=>x.classList.toggle('on',x===b)); renderLiftChart(document.getElementById('liftSelect').value); }; });
 
 // ---------- Routine library: locked built-ins + custom save/load/delete ----------
 const editBtn=document.getElementById('editBtn');            // "Save" in the editor
@@ -1831,6 +1883,16 @@ document.getElementById('exPickerSearch').oninput=function(){ renderExPicker(thi
 document.getElementById('exPickerCancel').onclick=()=>exPickerOverlay.classList.remove('show');
 exPickerOverlay.onclick=e=>{ if(e.target===exPickerOverlay) exPickerOverlay.classList.remove('show'); };
 
+// ---- Working weight editor ----
+const workWeightOverlay=document.getElementById('workWeightOverlay');
+let wwEditId=null;
+function openWorkWeight(id,name){ wwEditId=id; document.getElementById('wwName').textContent=name||''; document.getElementById('wwUnit').textContent=state.unit; const cur=ww(id); document.getElementById('wwInput').value=cur!=null?cur:''; workWeightOverlay.classList.add('show'); setTimeout(()=>{ const i=document.getElementById('wwInput'); if(i) i.focus(); },50); }
+function closeWW(){ workWeightOverlay.classList.remove('show'); wwEditId=null; }
+document.getElementById('wwSave').onclick=()=>{ if(!wwEditId){ closeWW(); return; } const v=dnum(document.getElementById('wwInput').value); state.workWeight=state.workWeight||{}; if(v!=null&&v>0) state.workWeight[wwEditId]=v; else delete state.workWeight[wwEditId]; save(); closeWW(); render(); };
+document.getElementById('wwBodyweight').onclick=()=>{ if(wwEditId){ state.workWeight=state.workWeight||{}; delete state.workWeight[wwEditId]; save(); } closeWW(); render(); };
+document.getElementById('wwCancel').onclick=closeWW;
+workWeightOverlay.onclick=e=>{ if(e.target===workWeightOverlay) closeWW(); };
+
 const infoOverlay=document.getElementById('infoOverlay');
 let infoEx=null;
 function openInfo(ex){
@@ -1927,7 +1989,7 @@ function applyImport(inc,mode){
     if(!state.defaultRoutine) state.defaultRoutine=seedDefault();
     if(!state.routine) state.routine=seedEmpty();
     ROUTINE=state.routine;
-    state.customRoutines=state.customRoutines||[]; if(state.activeRoutineId===undefined) state.activeRoutineId=detectActiveId();
+    state.customRoutines=state.customRoutines||[]; if(state.activeRoutineId===undefined) state.activeRoutineId=detectActiveId(); state.workWeight=state.workWeight||{};
   } else { mergeData(inc); }
   save(); paintUnit(); render(); renderProgress(); if(typeof renderDiet==='function') renderDiet();
 }
