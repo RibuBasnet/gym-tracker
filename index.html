@@ -1742,6 +1742,7 @@ function loadRoutine(kind){
   if(kind==='hybrid'){ state.routine=seedDefault(); state.activeRoutineId='builtin-hybrid'; }
   else if(kind==='weighted'){ state.routine=seedWeighted(); state.activeRoutineId='builtin-weighted'; }
   else if(kind==='cali'){ state.routine=seedCalisthenics(); state.activeRoutineId='builtin-cali'; }
+  else if(kind==='empty'){ state.routine=seedEmpty(); state.activeRoutineId='empty'; }
   else { const c=getCustom(kind); if(!c) return; state.routine=deepCopy(c.routine); state.activeRoutineId='cust-'+c.id; }
   ROUTINE=state.routine; save(); render();
 }
@@ -1765,7 +1766,8 @@ function renderRoutineList(){
   const box=pickRoutineOverlay.querySelector('.pick-list'); box.innerHTML='';
   [['builtin-hybrid','hybrid','Calisthenics + weighted','the hybrid'],
    ['builtin-weighted','weighted','Weighted','gym / free weights'],
-   ['builtin-cali','cali','Calisthenics','bodyweight only']].forEach(b=>{
+   ['builtin-cali','cali','Calisthenics','bodyweight only'],
+   ['empty','empty','Clean slate','empty days — a blank Train tab']].forEach(b=>{
     const btn=document.createElement('button'); btn.className='pick-row'; btn.dataset.r=b[1];
     btn.innerHTML='<span class="pick-name">'+b[2]+inUseTag(b[0])+'</span><span class="pick-desc">'+b[3]+'</span>';
     btn.onclick=()=>askRoutineConfirm('Load '+b[2]+'?','This replaces the routine currently on screen. Your logged sets, PRs, bodyweight and diet are all kept.','Load',false,()=>{ loadRoutine(b[1]); pickRoutineOverlay.classList.remove('show'); });
