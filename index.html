@@ -181,6 +181,8 @@
   .info-label{font-size:10px;letter-spacing:.2em;color:var(--muted);font-weight:600;}
   #infoTarget{font-family:"Oswald",sans-serif;font-weight:600;font-size:16px;color:var(--accent);text-transform:uppercase;}
   .info-how{font-size:14px;line-height:1.6;color:var(--ink);}
+  .info-clip-wrap{margin:0 0 14px;}
+  .info-clip{width:100%;border-radius:12px;background:#000;display:block;}
 
   /* ---- Tabs & progress ---- */
   .tabs{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);
@@ -844,6 +846,7 @@
         <h2 id="infoTitle"></h2>
         <button class="info-close" id="infoClose" aria-label="Close">×</button>
       </div>
+      <div class="info-clip-wrap" id="infoClipWrap" style="display:none"><video class="info-clip" id="infoClip" muted loop playsinline preload="metadata"></video></div>
       <div class="info-target"><span class="info-label">TARGETS</span><span id="infoTarget"></span></div>
       <p class="info-how" id="infoHow"></p>
       <div class="info-note-wrap" id="infoNoteWrap">
@@ -1053,7 +1056,7 @@ function guideFor(ex){
 
 // Plain-English form guide for each exercise (shown via the ⓘ icon)
 const HOWTO = {
-  'Standard push-ups':{m:'Chest, shoulders, triceps',h:'Hands under your shoulders, body in a straight line from head to heels. Lower until your chest nearly touches the floor with elbows about 45° from your body, then press back up. Keep your core tight so your hips do not sag.'},
+  'Standard push-ups':{m:'Chest, shoulders, triceps',h:'Hands under your shoulders, body in a straight line from head to heels. Lower until your chest nearly touches the floor with elbows about 45° from your body, then press back up. Keep your core tight so your hips do not sag.',clip:'clips/pushup-demo.mp4'},
   'Diamond push-ups':{m:'Triceps, inner chest',h:'Bring your hands together under your chest so your thumbs and index fingers form a diamond. Keep your elbows tucked close to your body as you lower and press up.'},
   'Wide push-ups':{m:'Outer chest',h:'Set your hands wider than shoulder-width. Lower under control with elbows flaring slightly out, then press up. The wider stance stretches the chest more.'},
   'Incline push-ups':{m:'Lower chest, easier variation',h:'Place your hands on a raised surface — a bench, bar, or step — with your feet on the floor. Lower your chest to the edge and press up. The higher the surface, the easier it is, which makes this great for racking up volume.'},
@@ -1840,6 +1843,10 @@ function openInfo(ex){
   const noteWrap=document.getElementById('infoNoteWrap');
   const noteEl=document.getElementById('infoNote');
   document.getElementById('infoTarget').textContent=g.m||'Custom exercise';
+  const _lib=HOWTO[name]; const _clip=(infoEx&&infoEx.clip)||(_lib&&_lib.clip)||'';
+  const _cw=document.getElementById('infoClipWrap'), _cv=document.getElementById('infoClip');
+  if(_clip){ if(_cv.getAttribute('src')!==_clip) _cv.setAttribute('src',_clip); _cw.style.display=''; const _pp=_cv.play(); if(_pp&&_pp.catch) _pp.catch(()=>{}); }
+  else { _cw.style.display='none'; _cv.removeAttribute('src'); if(_cv.load) _cv.load(); }
   if(g.h){ howEl.textContent=g.h; howEl.style.display=''; }
   else { howEl.style.display='none'; }
   // Notes are always available and editable — for built-in and custom exercises alike
