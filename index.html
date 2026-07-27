@@ -625,7 +625,7 @@
   <div class="overlay" id="pickRoutineOverlay">
     <div class="modal">
       <h2>Load a routine</h2>
-      <p>Tap a built-in to load it. Tap one of your own routines for options (edit, load, or delete). Making or editing a routine doesn't change what you're training with until you load it.</p>
+      <p>Tap a built-in to copy or load it. Tap one of your own routines to edit, load, or delete. Making or editing a routine doesn't change what you're training with until you load it.</p>
       <div class="pick-list"></div>
       <div class="modal-actions">
         <button id="pickRoutineCancel">Close</button>
@@ -644,6 +644,20 @@
       </div>
       <div class="modal-actions">
         <button id="caCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="presetActionOverlay">
+    <div class="modal">
+      <h2></h2>
+      <p>Built-in routines can't be edited directly. Copy it into your routines to customise, or load it to train.</p>
+      <div class="pick-list">
+        <button class="pick-row" id="paCopy"><span class="pick-name">Copy to my routines</span><span class="pick-desc">make an editable copy you can change later</span></button>
+        <button class="pick-row" id="paLoad"><span class="pick-name">Load</span><span class="pick-desc">train with this routine</span></button>
+      </div>
+      <div class="modal-actions">
+        <button id="paCancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -1820,7 +1834,7 @@ function renderRoutineList(){
    ['builtin-cali','cali','Calisthenics','bodyweight only']].forEach(b=>{
     const btn=document.createElement('button'); btn.className='pick-row'; btn.dataset.r=b[1];
     btn.innerHTML='<span class="pick-name">'+b[2]+inUseTag(b[0])+'</span><span class="pick-desc">'+b[3]+'</span>';
-    btn.onclick=()=>askRoutineConfirm('Load '+b[2]+'?','This replaces the routine currently on screen. Your logged sets, PRs, bodyweight and diet are all kept.','Load',false,()=>{ loadRoutine(b[1]); pickRoutineOverlay.classList.remove('show'); });
+    btn.onclick=()=>openPresetActions(b[1], b[2]);
     box.appendChild(btn);
   });
   const sep=document.createElement('div'); sep.className='pick-sep'; sep.textContent='Your routines'; box.appendChild(sep);
@@ -1848,6 +1862,22 @@ document.getElementById('caLoad').onclick=()=>{ const c=getCustom(popupCustomId)
 document.getElementById('caDelete').onclick=()=>{ const c=getCustom(popupCustomId); if(!c) return; const id=popupCustomId; customActionOverlay.classList.remove('show'); askRoutineConfirm('Delete '+c.name+'?','This permanently deletes this routine. This can\'t be undone. Your logged history is kept.','Delete',true,()=>{ deleteCustom(id); }); };
 document.getElementById('caCancel').onclick=()=>customActionOverlay.classList.remove('show');
 customActionOverlay.onclick=e=>{ if(e.target===customActionOverlay) customActionOverlay.classList.remove('show'); };
+const presetActionOverlay=document.getElementById('presetActionOverlay');
+let popupPresetKind=null, popupPresetName='';
+function openPresetActions(kind,name){ popupPresetKind=kind; popupPresetName=name; presetActionOverlay.querySelector('h2').textContent=name; presetActionOverlay.classList.add('show'); }
+function copyPreset(kind,name){
+  const src = kind==='hybrid'?seedDefault():kind==='weighted'?seedWeighted():kind==='cali'?seedCalisthenics():null;
+  if(!src) return;
+  const routine=deepCopy(src);
+  routine.forEach(d=>{ if(Array.isArray(d.ex)) d.ex.forEach(e=>{ e.id=uid(); }); });  // fresh ids -> own logs
+  state.customRoutines=state.customRoutines||[];
+  state.customRoutines.push({id:uid(), name:(name||'Routine')+' (copy)', routine});
+  save();
+}
+document.getElementById('paCopy').onclick=()=>{ copyPreset(popupPresetKind, popupPresetName); presetActionOverlay.classList.remove('show'); renderRoutineList(); };
+document.getElementById('paLoad').onclick=()=>{ const kind=popupPresetKind, name=popupPresetName; presetActionOverlay.classList.remove('show'); askRoutineConfirm('Load '+name+'?','This replaces the routine currently on screen. Your logged sets, PRs, bodyweight and diet are all kept.','Load',false,()=>{ loadRoutine(kind); pickRoutineOverlay.classList.remove('show'); }); };
+document.getElementById('paCancel').onclick=()=>presetActionOverlay.classList.remove('show');
+presetActionOverlay.onclick=e=>{ if(e.target===presetActionOverlay) presetActionOverlay.classList.remove('show'); };
 function deleteCustom(id){
   state.customRoutines=(state.customRoutines||[]).filter(c=>c.id!==id);
   if(state.activeRoutineId==='cust-'+id) state.activeRoutineId='';
