@@ -1099,7 +1099,7 @@ const HOWTO = {
   'Pike push-ups':{m:'Shoulders',h:'Start in a downward-dog shape with hips high and body in an upside-down V. Bend your elbows to lower the top of your head toward the floor, then press up. It mimics an overhead press.'},
   'Hindu push-ups':{m:'Chest, shoulders, mobility',h:'Start in a downward-dog V. In one flowing motion, dive your chest down and forward close to the floor, then sweep upward into an upward-dog with hips low and chest up. Reverse back to the V. Excellent for shoulder mobility and control.'},
   'Reverse-grip push-ups':{m:'Wrists, forearms, lower chest',h:'Set your hands with fingers pointing back toward your feet (palms reversed). Lower under control keeping your elbows close, then press up. The reversed position puts your wrists in deep extension, so it strongly works the wrists and forearms, hits the lower chest, and brings in some biceps. Ease in slowly and stop if you feel any wrist pain.'},
-  'Reverse palm push-ups':{m:'Wrists, forearms, chest',h:'Flip your hands over so the backs of your hands rest on the floor and your palms face up, fingertips pointing back toward your feet. Keep your body in a straight line and lower slowly, then press back up. This loads the wrists heavily, so warm the wrists up first, start from your knees, and ease off if you feel any wrist pain.'},
+  'Reverse palm push-ups':{m:'Wrists, forearms, chest',h:'Flip your hands over so the backs of your hands rest on the floor and your palms face up. Keep your body in a straight line and lower slowly, then press back up. This loads the wrists heavily, so warm the wrists up first, start from your knees, and ease off if you feel any wrist pain.'},
   'Dips':{m:'Lower chest, triceps',h:'On parallel bars or a sturdy edge, support yourself with arms straight. Bend your elbows to lower until your shoulders drop just below your elbows, then press back up. Lean forward for more chest, stay upright for more triceps.'},
   'Barbell bench press':{m:'Chest, front delts, triceps',h:'Lie on the bench, grip slightly wider than shoulders. Lower the bar under control to mid-chest with elbows about 45°, then press up. Keep feet planted and shoulder blades squeezed together.'},
   'Incline dumbbell press':{m:'Upper chest',h:'Set the bench to about 30°. Press the dumbbells from chest level up over your shoulders, then lower slowly to a deep stretch.'},
@@ -1189,7 +1189,7 @@ async function load(){
   if(!state.routine) state.routine=seedEmpty();
   ROUTINE=state.routine;
   state.customRoutines=state.customRoutines||[]; if(state.activeRoutineId===undefined) state.activeRoutineId=detectActiveId(); state.workWeight=state.workWeight||{};
-  if(state.activeRoutineId==='builtin-hybrid'){ (state.routine||[]).forEach(d=>{ (d.ex||[]).forEach(e=>{ if(e.n==='Reverse-grip push-ups'){ e.n='Reverse palm push-ups'; const _g=HOWTO['Reverse palm push-ups']; if(_g){ e.m=_g.m; e.h=_g.h; } } }); }); }
+  if(state.activeRoutineId==='builtin-hybrid'){ (state.routine||[]).forEach(d=>{ (d.ex||[]).forEach(e=>{ if(e.n==='Reverse-grip push-ups') e.n='Reverse palm push-ups'; if(e.n==='Reverse palm push-ups'){ const _g=HOWTO['Reverse palm push-ups']; if(_g){ e.m=_g.m; e.h=_g.h; } } }); }); }
   const cur=mondayId();
   if(state.weekId!==cur){
     // archive the finished week's logged sets before starting fresh
