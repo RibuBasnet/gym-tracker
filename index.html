@@ -2459,7 +2459,8 @@ function loadScanLib(){
   scanLibPromise=new Promise(function(res,rej){
     const s=document.createElement('script');
     s.src='https://fastly.jsdelivr.net/npm/barcode-detector@3/dist/iife/polyfill.min.js';
-    s.onload=function(){ res(); }; s.onerror=function(){ rej(new Error('lib')); };
+    s.onload=function(){ if(window.BarcodeDetector) res(); else rej(new Error('polyfill loaded but BarcodeDetector missing')); };
+    s.onerror=function(){ rej(new Error('script failed to load')); };
     document.head.appendChild(s);
   });
   return scanLibPromise;
@@ -2518,11 +2519,14 @@ async function startScan(){
   try{ scanDetector=new window.BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']}); }
   catch(e){ try{ scanDetector=new window.BarcodeDetector(); }catch(e2){ scanFail('Scanner not supported on this device. Use Add manually or Search online.'); return; } }
   status.textContent='Point your camera at a product barcode…';
-  let busy=false;
+  let busy=false, errs=0, started=Date.now();
   scanTimer=setInterval(async function(){
-    if(busy || !scanDetector || !video.videoWidth) return; busy=true;
+    if(busy || !scanDetector) return;
+    if(!video.videoWidth){ if(Date.now()-started>8000) status.textContent='Waiting for the camera… if it stays black, close and reopen the app, or use Add manually.'; return; }
+    busy=true;
     try{
       const codes=await scanDetector.detect(video);
+      errs=0;
       if(codes && codes.length){
         const code=codes[0].rawValue;
         stopCamera();
@@ -2533,7 +2537,10 @@ async function startScan(){
           else renderScanResult(food);
         }catch(e){ scanFail('Couldn’t reach the database. Try again, or Add manually.'); }
       }
-    }catch(e){}
+    }catch(e){
+      errs++;
+      if(errs>=12){ stopCamera(); scanFail('Scanner engine error: '+((e&&e.message)||e||'unknown')+'. Check your connection and try again, or use “+ Add manually” / “+ Add from online”.'); }
+    }
     busy=false;
   }, 350);
 }
