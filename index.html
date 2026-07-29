@@ -905,7 +905,7 @@ const DEFAULT_ROUTINE = [
     {n:'Dips',s:'3 × 10'},
   ]},
   {key:'tue',short:'T',name:'Tuesday',focus:'Push',sub:'weights',rest:false,ex:[
-    {n:'Barbell bench press',s:'3 × 10'},
+    {n:'Decline barbell bench press',s:'3 × 10'},
     {n:'Incline dumbbell press',s:'3 × 10'},
     {n:'Overhead press',s:'3 × 10'},
     {n:'Lateral raises',s:'3 × 10'},
@@ -1102,6 +1102,7 @@ const HOWTO = {
   'Palms-up push-ups':{m:'Wrists, forearms, chest',h:'Flip your hands over so the backs of your hands rest on the floor and your palms face up. Keep your body in a straight line and lower slowly, then press back up. This loads the wrists heavily, so warm the wrists up first, start from your knees, and ease off if you feel any wrist pain.'},
   'Dips':{m:'Lower chest, triceps',h:'On parallel bars or a sturdy edge, support yourself with arms straight. Bend your elbows to lower until your shoulders drop just below your elbows, then press back up. Lean forward for more chest, stay upright for more triceps.'},
   'Barbell bench press':{m:'Chest, front delts, triceps',h:'Lie on the bench, grip slightly wider than shoulders. Lower the bar under control to mid-chest with elbows about 45°, then press up. Keep feet planted and shoulder blades squeezed together.'},
+  'Decline barbell bench press':{m:'Lower chest, front delts, triceps',h:'Set the bench to a slight decline (head lower than hips) and secure your feet. Grip a little wider than shoulders, lower the bar under control to your lower chest with elbows about 45°, then press up. Keep your shoulder blades squeezed. The decline angle shifts the work onto the lower chest — use a spotter or safety pins, since bailing out is harder on a decline.'},
   'Incline dumbbell press':{m:'Upper chest',h:'Set the bench to about 30°. Press the dumbbells from chest level up over your shoulders, then lower slowly to a deep stretch.'},
   'Overhead press':{m:'Shoulders, triceps',h:'Standing, press the bar or dumbbells from shoulder height straight overhead. Brace your core and avoid leaning back too far.'},
   'Lateral raises':{m:'Side delts',h:'With light dumbbells, raise your arms out to the sides up to shoulder height with a slight elbow bend, then lower slowly. Lead with your elbows and do not swing.'},
@@ -1189,7 +1190,7 @@ async function load(){
   if(!state.routine) state.routine=seedEmpty();
   ROUTINE=state.routine;
   state.customRoutines=state.customRoutines||[]; if(state.activeRoutineId===undefined) state.activeRoutineId=detectActiveId(); state.workWeight=state.workWeight||{};
-  if(state.activeRoutineId==='builtin-hybrid'){ (state.routine||[]).forEach(d=>{ (d.ex||[]).forEach(e=>{ if(e.n==='Reverse-grip push-ups'||e.n==='Reverse palm push-ups') e.n='Palms-up push-ups'; if(e.n==='Palms-up push-ups'){ const _g=HOWTO['Palms-up push-ups']; if(_g){ e.m=_g.m; e.h=_g.h; } } }); }); }
+  if(state.activeRoutineId==='builtin-hybrid'){ (state.routine||[]).forEach(d=>{ (d.ex||[]).forEach(e=>{ if(e.n==='Reverse-grip push-ups'||e.n==='Reverse palm push-ups') e.n='Palms-up push-ups'; if(e.n==='Palms-up push-ups'){ const _g=HOWTO['Palms-up push-ups']; if(_g){ e.m=_g.m; e.h=_g.h; } } if(e.n==='Barbell bench press') e.n='Decline barbell bench press'; if(e.n==='Decline barbell bench press'){ const _g2=HOWTO['Decline barbell bench press']; if(_g2){ e.m=_g2.m; e.h=_g2.h; } } }); }); }
   const cur=mondayId();
   if(state.weekId!==cur){
     // archive the finished week's logged sets before starting fresh
