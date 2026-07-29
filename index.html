@@ -1096,6 +1096,10 @@ function hybridFixups(r){
       if(e.n==='Cable fly') e.n='Dumbbell chest fly';
       const g=HOWTO[e.n]; if(g){ e.m=g.m; e.h=g.h; }
     });
+    if(d.key==='tue' && !d.ex.some(function(e){ return e.n==='Seated Arnold press'; })){
+      const ag=HOWTO['Seated Arnold press']||{};
+      d.ex.push({id:'hyb-arnold', n:'Seated Arnold press', s:'3 × 10', m:ag.m||'', h:ag.h||''});
+    }
   });
 }
 // Resolve guide text for display: exercise's own fields, else built-in library, else custom.
@@ -1120,6 +1124,7 @@ const HOWTO = {
   'Barbell bench press':{m:'Chest, front delts, triceps',h:'Lie on the bench, grip slightly wider than shoulders. Lower the bar under control to mid-chest with elbows about 45°, then press up. Keep feet planted and shoulder blades squeezed together.'},
   'Decline barbell bench press':{m:'Lower chest, front delts, triceps',h:'Set the bench to a slight decline (head lower than hips) and secure your feet. Grip a little wider than shoulders, lower the bar under control to your lower chest with elbows about 45°, then press up. Keep your shoulder blades squeezed. The decline angle shifts the work onto the lower chest — use a spotter or safety pins, since bailing out is harder on a decline.'},
   'Incline dumbbell press':{m:'Upper chest',h:'Set the bench to about 30°. Press the dumbbells from chest level up over your shoulders, then lower slowly to a deep stretch.'},
+  'Seated Arnold press':{m:'Shoulders (front, side, rear)',h:'Sit upright with back support, a dumbbell in each hand at shoulder height, palms facing you. As you press overhead, rotate your wrists so your palms face forward at the top, then reverse the rotation as you lower. The twist works all three heads of the shoulder through a big range — keep the weight moderate and the motion controlled.'},
   'Overhead press':{m:'Shoulders, triceps',h:'Standing, press the bar or dumbbells from shoulder height straight overhead. Brace your core and avoid leaning back too far.'},
   'Lateral raises':{m:'Side delts',h:'With light dumbbells, raise your arms out to the sides up to shoulder height with a slight elbow bend, then lower slowly. Lead with your elbows and do not swing.'},
   'Cable fly':{m:'Chest',h:'From the pulleys, bring the handles together in front of you with a slight elbow bend, squeezing your chest. Control the return.'},
