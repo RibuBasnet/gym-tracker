@@ -1082,6 +1082,22 @@ function detectActiveId(){
   }
   return '';
 }
+// Personal hybrid tweaks (renames + removed exercises) as a fixup layer, so exercise-id
+// positions stay stable and logs never orphan. To be folded into the library later.
+function hybridFixups(r){
+  if(!Array.isArray(r)) return;
+  const REMOVE={'Overhead press':1,'Lateral raises':1};
+  r.forEach(function(d){
+    if(!Array.isArray(d.ex)) return;
+    d.ex=d.ex.filter(function(e){ return !REMOVE[e.n]; });
+    d.ex.forEach(function(e){
+      if(e.n==='Reverse-grip push-ups'||e.n==='Reverse palm push-ups') e.n='Palms-up push-ups';
+      if(e.n==='Barbell bench press') e.n='Decline barbell bench press';
+      if(e.n==='Cable fly') e.n='Dumbbell chest fly';
+      const g=HOWTO[e.n]; if(g){ e.m=g.m; e.h=g.h; }
+    });
+  });
+}
 // Resolve guide text for display: exercise's own fields, else built-in library, else custom.
 function guideFor(ex){
   if(ex && (ex.m||ex.h)) return {m:ex.m||'', h:ex.h||''};
@@ -1191,7 +1207,7 @@ async function load(){
   if(!state.routine) state.routine=seedEmpty();
   ROUTINE=state.routine;
   state.customRoutines=state.customRoutines||[]; if(state.activeRoutineId===undefined) state.activeRoutineId=detectActiveId(); state.workWeight=state.workWeight||{};
-  if(state.activeRoutineId==='builtin-hybrid'){ (state.routine||[]).forEach(d=>{ (d.ex||[]).forEach(e=>{ if(e.n==='Reverse-grip push-ups'||e.n==='Reverse palm push-ups') e.n='Palms-up push-ups'; if(e.n==='Palms-up push-ups'){ const _g=HOWTO['Palms-up push-ups']; if(_g){ e.m=_g.m; e.h=_g.h; } } if(e.n==='Barbell bench press') e.n='Decline barbell bench press'; if(e.n==='Decline barbell bench press'){ const _g2=HOWTO['Decline barbell bench press']; if(_g2){ e.m=_g2.m; e.h=_g2.h; } } if(e.n==='Cable fly') e.n='Dumbbell chest fly'; if(e.n==='Dumbbell chest fly'){ const _g3=HOWTO['Dumbbell chest fly']; if(_g3){ e.m=_g3.m; e.h=_g3.h; } } }); }); }
+  if(state.activeRoutineId==='builtin-hybrid') hybridFixups(state.routine);
   const cur=mondayId();
   if(state.weekId!==cur){
     // archive the finished week's logged sets before starting fresh
@@ -1808,7 +1824,7 @@ cancelEditBtn.onclick=cancelRoutineEditor;
 
 // ---- Load (built-in or custom) ----
 function loadRoutine(kind){
-  if(kind==='hybrid'){ state.routine=seedDefault(); state.activeRoutineId='builtin-hybrid'; }
+  if(kind==='hybrid'){ state.routine=seedDefault(); hybridFixups(state.routine); state.activeRoutineId='builtin-hybrid'; }
   else if(kind==='weighted'){ state.routine=seedWeighted(); state.activeRoutineId='builtin-weighted'; }
   else if(kind==='cali'){ state.routine=seedCalisthenics(); state.activeRoutineId='builtin-cali'; }
   else if(kind==='empty'){ state.routine=seedEmpty(); state.activeRoutineId='empty'; }
@@ -1873,6 +1889,7 @@ function copyPreset(kind,name){
   const src = kind==='hybrid'?seedDefault():kind==='weighted'?seedWeighted():kind==='cali'?seedCalisthenics():null;
   if(!src) return;
   const routine=deepCopy(src);
+  if(kind==='hybrid') hybridFixups(routine);
   routine.forEach(d=>{ if(Array.isArray(d.ex)) d.ex.forEach(e=>{ e.id=uid(); }); });  // fresh ids -> own logs
   state.customRoutines=state.customRoutines||[];
   state.customRoutines.push({id:uid(), name:(name||'Routine')+' (copy)', routine});
