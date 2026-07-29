@@ -909,7 +909,7 @@ const DEFAULT_ROUTINE = [
     {n:'Incline dumbbell press',s:'3 × 10'},
     {n:'Overhead press',s:'3 × 10'},
     {n:'Lateral raises',s:'3 × 10'},
-    {n:'Cable fly',s:'3 × 10'},
+    {n:'Dumbbell chest fly',s:'3 × 10'},
     {n:'Triceps pushdown',s:'3 × 10'},
   ]},
   {key:'wed',short:'W',name:'Wednesday',focus:'Rest',sub:'recover',rest:true,ex:[]},
@@ -1107,6 +1107,7 @@ const HOWTO = {
   'Overhead press':{m:'Shoulders, triceps',h:'Standing, press the bar or dumbbells from shoulder height straight overhead. Brace your core and avoid leaning back too far.'},
   'Lateral raises':{m:'Side delts',h:'With light dumbbells, raise your arms out to the sides up to shoulder height with a slight elbow bend, then lower slowly. Lead with your elbows and do not swing.'},
   'Cable fly':{m:'Chest',h:'From the pulleys, bring the handles together in front of you with a slight elbow bend, squeezing your chest. Control the return.'},
+  'Dumbbell chest fly':{m:'Chest',h:'Lie on a flat bench with a dumbbell in each hand held above your chest, palms facing each other and a slight bend in your elbows. Lower the weights out to the sides in a wide arc until you feel a stretch across your chest, then bring them back together over your chest and squeeze. Keep that slight elbow bend fixed the whole time — it is an arc, not a press.'},
   'Triceps pushdown':{m:'Triceps',h:'At the cable machine, keep your elbows pinned to your sides and push the bar down until arms are fully straight, then control it back up.'},
   'Barbell row':{m:'Lats, mid-back, biceps',h:'Hinge at your hips with a flat back. Pull the bar to your lower ribs, squeezing your shoulder blades, then lower with control.'},
   'Lat pulldown':{m:'Lats',h:'Grip the bar wider than shoulders. Pull it to your upper chest by driving your elbows down, squeeze your back, then control the bar back up.'},
@@ -1190,7 +1191,7 @@ async function load(){
   if(!state.routine) state.routine=seedEmpty();
   ROUTINE=state.routine;
   state.customRoutines=state.customRoutines||[]; if(state.activeRoutineId===undefined) state.activeRoutineId=detectActiveId(); state.workWeight=state.workWeight||{};
-  if(state.activeRoutineId==='builtin-hybrid'){ (state.routine||[]).forEach(d=>{ (d.ex||[]).forEach(e=>{ if(e.n==='Reverse-grip push-ups'||e.n==='Reverse palm push-ups') e.n='Palms-up push-ups'; if(e.n==='Palms-up push-ups'){ const _g=HOWTO['Palms-up push-ups']; if(_g){ e.m=_g.m; e.h=_g.h; } } if(e.n==='Barbell bench press') e.n='Decline barbell bench press'; if(e.n==='Decline barbell bench press'){ const _g2=HOWTO['Decline barbell bench press']; if(_g2){ e.m=_g2.m; e.h=_g2.h; } } }); }); }
+  if(state.activeRoutineId==='builtin-hybrid'){ (state.routine||[]).forEach(d=>{ (d.ex||[]).forEach(e=>{ if(e.n==='Reverse-grip push-ups'||e.n==='Reverse palm push-ups') e.n='Palms-up push-ups'; if(e.n==='Palms-up push-ups'){ const _g=HOWTO['Palms-up push-ups']; if(_g){ e.m=_g.m; e.h=_g.h; } } if(e.n==='Barbell bench press') e.n='Decline barbell bench press'; if(e.n==='Decline barbell bench press'){ const _g2=HOWTO['Decline barbell bench press']; if(_g2){ e.m=_g2.m; e.h=_g2.h; } } if(e.n==='Cable fly') e.n='Dumbbell chest fly'; if(e.n==='Dumbbell chest fly'){ const _g3=HOWTO['Dumbbell chest fly']; if(_g3){ e.m=_g3.m; e.h=_g3.h; } } }); }); }
   const cur=mondayId();
   if(state.weekId!==cur){
     // archive the finished week's logged sets before starting fresh
