@@ -1285,27 +1285,26 @@ function lastLogged(id){
   return null;
 }
 // Personal record across all history + current week. Weighted lifts ranked by
-// estimated 1-rep-max (Epley); bodyweight lifts ranked by reps.
+// PR = a record actually broken. Weighted -> estimated 1RM (Epley); bodyweight -> reps.
+// Mode follows the working-weight chip (same as the chart). Fires only when this week
+// strictly beats a previous week — ties and first-ever entries don't trigger it.
 function prInfo(id){
-  const weighted=[], curWeighted=[], bw=[], curBw=[];
-  const scan=(a,cur)=>{ if(!Array.isArray(a))return; a.forEach(s=>{ if(!s)return;
+  const weighted=isWeighted(id);
+  const prior=[], cur=[];
+  const scan=(a,isCur)=>{ if(!Array.isArray(a))return; a.forEach(s=>{ if(!s)return;
     const r=parseInt(String(s.r).trim(),10); if(!r)return;
-    const wStr=String(s.w).trim();
-    if(wStr===''){ bw.push(r); if(cur)curBw.push(r); }
-    else { const w=parseFloat(wStr); if(isNaN(w))return; const e=w*(1+r/30); weighted.push({w,r,e}); if(cur)curWeighted.push({w,r,e}); }
+    if(weighted){ const wStr=String(s.w).trim(); if(wStr==='')return; const w=parseFloat(wStr); if(isNaN(w))return; (isCur?cur:prior).push({w:w,r:r,e:w*(1+r/30)}); }
+    else { (isCur?cur:prior).push({w:null,r:r,e:r}); }
   }); };
   for(const wk of Object.keys(state.history||{})) scan((state.history[wk].logs||{})[id],false);
   scan(state.logs[id],true);
-  if(weighted.length){
-    weighted.sort((a,b)=>b.e-a.e); const best=weighted[0];
-    const cur=curWeighted.sort((a,b)=>b.e-a.e)[0];
-    return {label:best.w+state.unit+' × '+best.r, isPR: !!(cur && cur.e>=best.e-1e-9)};
-  }
-  if(bw.length){
-    const best=Math.max(...bw); const cur=curBw.length?Math.max(...curBw):null;
-    return {label:best+' reps', isPR: cur!==null && cur>=best};
-  }
-  return null;
+  if(!prior.length && !cur.length) return null;
+  const best=prior.concat(cur).slice().sort((a,b)=>b.e-a.e)[0];
+  const curBestE=cur.length?Math.max.apply(null,cur.map(x=>x.e)):null;
+  const priorBestE=prior.length?Math.max.apply(null,prior.map(x=>x.e)):null;
+  const isPR = (curBestE!=null && priorBestE!=null && curBestE > priorBestE + 1e-9);
+  const label = weighted ? (best.w+state.unit+' × '+best.r) : (best.r+' reps');
+  return {label:label, isPR:isPR};
 }
 
 function buildScoreboard(){
