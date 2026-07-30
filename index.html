@@ -1106,6 +1106,10 @@ function hybridFixups(r){
       const rg=HOWTO['Seated rear delt fly']||{};
       d.ex.push({id:'hyb-reardelt', n:'Seated rear delt fly', s:'3 × 10', m:rg.m||'', h:rg.h||''});
     }
+    if(d.key==='thu' && !d.ex.some(function(e){ return e.n==='Incline dumbbell curl'; })){
+      const cg=HOWTO['Incline dumbbell curl']||{};
+      d.ex.push({id:'hyb-inclinecurl', n:'Incline dumbbell curl', s:'3 × 10', m:cg.m||'', h:cg.h||''});
+    }
   });
 }
 // Resolve guide text for display: exercise's own fields, else built-in library, else custom.
@@ -1145,6 +1149,7 @@ const HOWTO = {
   'Barbell / EZ-bar curl':{m:'Biceps',h:'Keep your elbows at your sides and curl the bar up without swinging your body, then lower slowly.'},
   'Barbell curl 21s':{m:'Biceps',h:'A set of 21 is three parts back-to-back with no rest: 7 reps through the bottom half (straight arms up to 90°), 7 through the top half (90° to full curl), then 7 full-range reps. Keep your elbows pinned at your sides and do not swing. Use a lighter bar than a normal curl — the constant tension makes 21 reps very hard.'},
   'Hammer curl':{m:'Biceps, forearms',h:'Hold the dumbbells with palms facing each other (neutral grip) and curl up, keeping your wrists straight.'},
+  'Incline dumbbell curl':{m:'Biceps (long head)',h:'Sit back on an incline bench set to about 45–60° with a dumbbell in each hand, arms hanging straight down slightly behind your torso. Curl the weights up without letting your elbows drift forward, squeeze at the top, then lower slowly. The incline stretches the long head of the biceps for a strong contraction — keep it strict, no swinging.'},
   'Standard pull-ups (pronated)':{m:'Lats, upper back, biceps',h:'Overhand grip, hang with arms straight. Pull until your chin clears the bar, then lower under control. Avoid swinging.'},
   'Chin-ups (supinated)':{m:'Lats, biceps',h:'Underhand grip. Pull up until your chin is over the bar. Easier for most people and hits the biceps harder.'},
   'Neutral-grip pull-ups':{m:'Back, arms (joint-friendly)',h:'Palms facing each other on parallel handles. Pull up and lower with control — easier on the shoulders and elbows.'},
