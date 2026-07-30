@@ -1096,6 +1096,7 @@ function hybridFixups(r){
       if(e.n==='Cable fly') e.n='Dumbbell chest fly';
       if(e.n==='Face pulls') e.n='Lat pullover';
       if(e.n==='Barbell / EZ-bar curl') e.n='Barbell curl 21s';
+      if(e.n==='Barbell curl 21s') e.s='3 × 21';
       const g=HOWTO[e.n]; if(g){ e.m=g.m; e.h=g.h; }
     });
     if(d.key==='tue' && !d.ex.some(function(e){ return e.n==='Seated Arnold press'; })){
