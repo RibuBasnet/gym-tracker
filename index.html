@@ -1095,6 +1095,7 @@ function hybridFixups(r){
       if(e.n==='Barbell bench press') e.n='Decline barbell bench press';
       if(e.n==='Cable fly') e.n='Dumbbell chest fly';
       if(e.n==='Face pulls') e.n='Lat pullover';
+      if(e.n==='Barbell / EZ-bar curl') e.n='Barbell curl 21s';
       const g=HOWTO[e.n]; if(g){ e.m=g.m; e.h=g.h; }
     });
     if(d.key==='tue' && !d.ex.some(function(e){ return e.n==='Seated Arnold press'; })){
@@ -1142,6 +1143,7 @@ const HOWTO = {
   'Face pulls':{m:'Rear delts, upper back',h:'With a rope at face height, pull it toward your face with your hands separating and elbows high. Great for shoulder health and posture.'},
   'Lat pullover':{m:'Lats, chest, serratus',h:'Lie back on a bench with a single dumbbell held over your chest in both hands. Keeping a slight bend in your elbows, lower the weight back behind your head in an arc until you feel a stretch through your lats and chest, then pull it back over your chest. Keep your ribs down and move only at the shoulders.'},
   'Barbell / EZ-bar curl':{m:'Biceps',h:'Keep your elbows at your sides and curl the bar up without swinging your body, then lower slowly.'},
+  'Barbell curl 21s':{m:'Biceps',h:'A set of 21 is three parts back-to-back with no rest: 7 reps through the bottom half (straight arms up to 90°), 7 through the top half (90° to full curl), then 7 full-range reps. Keep your elbows pinned at your sides and do not swing. Use a lighter bar than a normal curl — the constant tension makes 21 reps very hard.'},
   'Hammer curl':{m:'Biceps, forearms',h:'Hold the dumbbells with palms facing each other (neutral grip) and curl up, keeping your wrists straight.'},
   'Standard pull-ups (pronated)':{m:'Lats, upper back, biceps',h:'Overhand grip, hang with arms straight. Pull until your chin clears the bar, then lower under control. Avoid swinging.'},
   'Chin-ups (supinated)':{m:'Lats, biceps',h:'Underhand grip. Pull up until your chin is over the bar. Easier for most people and hits the biceps harder.'},
