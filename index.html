@@ -1094,6 +1094,7 @@ function hybridFixups(r){
       if(e.n==='Reverse-grip push-ups'||e.n==='Reverse palm push-ups') e.n='Palms-up push-ups';
       if(e.n==='Barbell bench press') e.n='Decline barbell bench press';
       if(e.n==='Cable fly') e.n='Dumbbell chest fly';
+      if(e.n==='Face pulls') e.n='Lat pullover';
       const g=HOWTO[e.n]; if(g){ e.m=g.m; e.h=g.h; }
     });
     if(d.key==='tue' && !d.ex.some(function(e){ return e.n==='Seated Arnold press'; })){
@@ -1139,6 +1140,7 @@ const HOWTO = {
   'Lat pulldown':{m:'Lats',h:'Grip the bar wider than shoulders. Pull it to your upper chest by driving your elbows down, squeeze your back, then control the bar back up.'},
   'Seated cable row':{m:'Mid-back',h:'Sit tall and pull the handle to your stomach, squeezing your shoulder blades together. Keep your torso still rather than rocking.'},
   'Face pulls':{m:'Rear delts, upper back',h:'With a rope at face height, pull it toward your face with your hands separating and elbows high. Great for shoulder health and posture.'},
+  'Lat pullover':{m:'Lats, chest, serratus',h:'Lie back on a bench with a single dumbbell held over your chest in both hands. Keeping a slight bend in your elbows, lower the weight back behind your head in an arc until you feel a stretch through your lats and chest, then pull it back over your chest. Keep your ribs down and move only at the shoulders.'},
   'Barbell / EZ-bar curl':{m:'Biceps',h:'Keep your elbows at your sides and curl the bar up without swinging your body, then lower slowly.'},
   'Hammer curl':{m:'Biceps, forearms',h:'Hold the dumbbells with palms facing each other (neutral grip) and curl up, keeping your wrists straight.'},
   'Standard pull-ups (pronated)':{m:'Lats, upper back, biceps',h:'Overhand grip, hang with arms straight. Pull until your chin clears the bar, then lower under control. Avoid swinging.'},
