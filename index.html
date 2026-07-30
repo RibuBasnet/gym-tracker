@@ -1111,6 +1111,10 @@ function hybridFixups(r){
       const cg=HOWTO['Incline dumbbell curl']||{};
       d.ex.push({id:'hyb-inclinecurl', n:'Incline dumbbell curl', s:'3 × 10', m:cg.m||'', h:cg.h||''});
     }
+    if(d.key==='thu' && !d.ex.some(function(e){ return e.n==='Bent-over barbell row'; })){
+      const bg=HOWTO['Bent-over barbell row']||{};
+      d.ex.unshift({id:'hyb-bentrow', n:'Bent-over barbell row', s:'3 × 10', m:bg.m||'', h:bg.h||''});
+    }
   });
 }
 // Resolve guide text for display: exercise's own fields, else built-in library, else custom.
@@ -1143,6 +1147,7 @@ const HOWTO = {
   'Dumbbell chest fly':{m:'Chest',h:'Lie on a flat bench with a dumbbell in each hand held above your chest, palms facing each other and a slight bend in your elbows. Lower the weights out to the sides in a wide arc until you feel a stretch across your chest, then bring them back together over your chest and squeeze. Keep that slight elbow bend fixed the whole time — it is an arc, not a press.'},
   'Triceps pushdown':{m:'Triceps',h:'At the cable machine, keep your elbows pinned to your sides and push the bar down until arms are fully straight, then control it back up.'},
   'Barbell row':{m:'Lats, mid-back, biceps',h:'Hinge at your hips with a flat back. Pull the bar to your lower ribs, squeezing your shoulder blades, then lower with control.'},
+  'Bent-over barbell row':{m:'Lats, mid-back, biceps',h:'Hinge at your hips with a flat back and soft knees, holding the bar with an overhand grip. Pull the bar to your lower ribs, driving your elbows back and squeezing your shoulder blades together, then lower under control. Keep your torso angle steady and avoid heaving with your lower back.'},
   'Lat pulldown':{m:'Lats',h:'Grip the bar wider than shoulders. Pull it to your upper chest by driving your elbows down, squeeze your back, then control the bar back up.'},
   'Seated cable row':{m:'Mid-back',h:'Sit tall and pull the handle to your stomach, squeezing your shoulder blades together. Keep your torso still rather than rocking.'},
   'Face pulls':{m:'Rear delts, upper back',h:'With a rope at face height, pull it toward your face with your hands separating and elbows high. Great for shoulder health and posture.'},
