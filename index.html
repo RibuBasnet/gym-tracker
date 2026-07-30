@@ -1086,7 +1086,7 @@ function detectActiveId(){
 // positions stay stable and logs never orphan. To be folded into the library later.
 function hybridFixups(r){
   if(!Array.isArray(r)) return;
-  const REMOVE={'Overhead press':1,'Lateral raises':1};
+  const REMOVE={'Overhead press':1,'Lateral raises':1,'Barbell row':1};
   r.forEach(function(d){
     if(!Array.isArray(d.ex)) return;
     d.ex=d.ex.filter(function(e){ return !REMOVE[e.n]; });
