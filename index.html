@@ -446,6 +446,12 @@
   .goal-modal{max-width:360px;text-align:left;max-height:86vh;overflow-y:auto;}
   .goal-form{display:flex;flex-direction:column;gap:12px;}
   .goal-form>label{display:flex;flex-direction:column;gap:5px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .you-row{display:flex;gap:10px;}
+  .you-row>label{flex:1;display:flex;flex-direction:column;gap:5px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  #dietYou .goal-seg{margin-top:12px;}
+  .you-actlabel{display:flex;flex-direction:column;gap:5px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+  .you-actlabel select{background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:11px;font-family:inherit;font-size:14px;}
+  #dietTarget .goal-seg{margin-bottom:16px;}
   .goal-form input,.goal-form select{background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);
     font-family:"IBM Plex Mono",monospace;font-size:14px;padding:10px;}
   .goal-seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
@@ -522,7 +528,32 @@
 
     <div class="diet-readonly" id="dietReadonly" hidden>Past day — view only. Go to Today to log or edit.</div>
 
-    <div class="pcard" id="dietSummary"></div>
+    <div class="pcard" id="dietYou">
+      <div class="board-label">YOU</div>
+      <div class="goal-form">
+        <div class="you-row">
+          <label>Weight (<span id="youWUnit">kg</span>)<input id="youW" type="text" inputmode="decimal"></label>
+          <label>Height (cm)<input id="youH" type="text" inputmode="decimal"></label>
+          <label>Age<input id="youAge" type="text" inputmode="numeric"></label>
+        </div>
+        <div class="goal-seg" id="youSex"><button data-v="m" class="on">Male</button><button data-v="f">Female</button></div>
+      </div>
+    </div>
+
+    <div class="pcard" id="dietTarget">
+      <div class="board-label">DAILY TARGET</div>
+      <label class="you-actlabel">Activity level
+        <select id="youAct">
+          <option value="1.2">Sedentary — desk, little exercise</option>
+          <option value="1.375">Light — 1–3 workouts/week</option>
+          <option value="1.55" selected>Moderate — 3–5 workouts/week</option>
+          <option value="1.725">Active — 6–7 workouts/week</option>
+          <option value="1.9">Athlete — hard daily / 2× a day</option>
+        </select>
+      </label>
+      <div class="goal-seg" id="youGoal"><button data-v="cut">Cut</button><button data-v="maintain" class="on">Maintain</button><button data-v="bulk">Bulk</button></div>
+      <div id="dietBar"></div>
+    </div>
 
     <div class="pcard">
       <div class="board-label">WATER</div>
@@ -722,30 +753,10 @@
   </div>
 
   <div class="overlay" id="goalOverlay">
-    <div class="modal goal-modal">
-      <h2>Daily targets</h2>
-      <p class="left">Estimated from your details and latest weight. These are starting points, not medical or dietitian advice — adjust them based on how your body actually responds.</p>
-      <div class="goal-form">
-        <label>Weight (<span id="goalWUnit">kg</span>)<input id="gWeight" type="text" inputmode="decimal"></label>
-        <label>Height (cm)<input id="gHeight" type="text" inputmode="decimal"></label>
-        <label>Age<input id="gAge" type="text" inputmode="numeric"></label>
-        <div class="goal-seg" id="gSex">
-          <button data-v="m" class="on">Male</button><button data-v="f">Female</button>
-        </div>
-        <label>Activity level
-          <select id="gAct">
-            <option value="1.2">Sedentary — desk, little exercise</option>
-            <option value="1.375">Light — 1–3 workouts/week</option>
-            <option value="1.55" selected>Moderate — 3–5 workouts/week</option>
-            <option value="1.725">Active — 6–7 workouts/week</option>
-            <option value="1.9">Athlete — hard daily / 2× a day</option>
-          </select>
-        </label>
-        <div class="goal-seg" id="gGoal">
-          <button data-v="cut">Cut</button><button data-v="maintain" class="on">Maintain</button><button data-v="bulk">Bulk</button>
-        </div>
-        <div class="goal-calc" id="goalCalc"></div>
-      </div>
+    <div class="modal">
+      <h2>Edit targets</h2>
+      <p class="left">Override the auto-calculated numbers. Changing your stats or cut / maintain / bulk on the Diet tab will recalculate and replace these.</p>
+      <div class="goal-calc" id="goalCalc"></div>
       <div class="modal-actions">
         <button id="goalCancel">Cancel</button>
         <button class="confirm" id="goalSave">Save targets</button>
@@ -2173,36 +2184,9 @@ function renderDiet(){
   document.getElementById('waterBtns').hidden = ro;
   document.getElementById('savedFoodsCard').hidden = ro;
   document.getElementById('dietFoot').hidden = ro;
-  const tot=dayTotals(dietDate);
-  const g=state.dietGoal;
-  const sum=document.getElementById('dietSummary');
-  if(!g){
-    sum.innerHTML='<div class="board-label">'+(ro?dietDateLabel(dietDate).toUpperCase():'TODAY')+'</div>'+
-      '<div class="kcal-big">'+tot.kcal+' <span>kcal logged</span></div>'+
-      (ro?'':'<div class="diet-hint">Set your cut / maintain / bulk targets to see how much you have left each day.</div>'+
-      '<button class="add-set set-targets" id="setTargetsBtn">Set my targets</button>');
-    const stb=document.getElementById('setTargetsBtn'); if(stb) stb.onclick=openGoal;
-  } else {
-    const t=g.t; const remK=t.kcal-tot.kcal; const kOver=remK<0;
-    let html='<div class="board-label">'+escapeHtml(g.goal.toUpperCase())+' · DAILY</div>';
-    html+='<div class="kcal-big">'+tot.kcal+' <span>/ '+t.kcal+' kcal</span></div>';
-    html+='<div class="macro-row"><span class="rem '+(kOver?'over':'ok')+'">'+(kOver?('over by '+Math.abs(remK)+' kcal'):(remK+' kcal left'))+'</span></div>';
-    html+='<div class="bar"><div class="bar-fill '+(kOver?'over':'')+'" style="width:'+barPct(tot.kcal,t.kcal)+'%"></div></div>';
-    [['Fat','f'],['Carbs','c'],['Protein','p']].forEach(function(rw){
-      const label=rw[0], key=rw[1], cv=tot[key], tv=t[key], rem=tv-cv, over=rem<0;
-      html+='<div class="macro-row"><span class="lbl">'+label+'</span>'+
-        '<span class="val">'+cv+' / '+tv+' g <span class="rem '+(over?'over':'ok')+'">('+(over?('+'+Math.abs(rem)):(rem+' left'))+')</span></span></div>';
-      html+='<div class="bar"><div class="bar-fill '+key+(over?' over':'')+'" style="width:'+barPct(cv,tv)+'%"></div></div>';
-    });
-    html+= ro ? '' : '<button class="edit-targets" id="editTargetsBtn">Edit targets</button>';
-    sum.innerHTML=html;
-    const etb=document.getElementById('editTargetsBtn'); if(etb) etb.onclick=openGoal;
-  }
+  syncDietProfileInputs();
+  renderDietBar();
   const day=getDietDay(dietDate);
-  const wGoal = g? g.t.water : 0;
-  document.getElementById('waterNow').textContent=day.water||0;
-  document.getElementById('waterGoal').textContent=wGoal||'—';
-  document.getElementById('waterFill').style.width=barPct(day.water||0,wGoal||1)+'%';
   const fl=document.getElementById('foodList');
   const items=(day.items||[]);
   if(!items.length){ fl.innerHTML='<div class="food-empty">No food logged for this day yet.</div>'; }
@@ -2316,12 +2300,6 @@ function undoWater(){ if(!waterUndo.length) return; const ml=waterUndo.pop(); co
 
 const goalOverlay=document.getElementById('goalOverlay');
 function paintSeg(id,val){ document.querySelectorAll('#'+id+' button').forEach(b=>b.classList.toggle('on',b.dataset.v===val)); }
-function currentGoalInputs(){
-  const w=dnum(document.getElementById('gWeight').value);
-  const kg = w==null?null:(state.unit==='lb'? w/2.20462 : w);
-  return { wDisp:w, kg, h:dnum(document.getElementById('gHeight').value), age:dnum(document.getElementById('gAge').value),
-    sex:goalSex, act:parseFloat(document.getElementById('gAct').value)||ACT_DEFAULT, goal:goalGoal };
-}
 function gcRow(label,id,val,unit){
   return '<div class="gc-row"><label>'+label+'</label><div style="display:flex;align-items:center;gap:6px">'+
     '<input id="'+id+'" type="text" inputmode="decimal" value="'+val+'"><span class="sf-sub">'+unit+'</span></div></div>';
@@ -2330,41 +2308,77 @@ function renderGoalCalc(t){
   document.getElementById('goalCalc').innerHTML=
     gcRow('Calories','tKcal',t.kcal,'kcal')+gcRow('Fat','tF',t.f,'g')+
     gcRow('Carbs','tC',t.c,'g')+gcRow('Protein','tP',t.p,'g')+gcRow('Water','tWater',t.water,'ml');
-  ['tKcal','tP','tC','tF','tWater'].forEach(function(id){
-    document.getElementById(id).addEventListener('input',function(){ goalManual=true; });
+}
+// ---- Diet profile: You + Target boxes on the tab ----
+function ensureDietGoal(){ if(!state.dietGoal) state.dietGoal={wDisp:null,h:null,age:null,sex:'m',act:ACT_DEFAULT,goal:'maintain',manual:false,t:null}; return state.dietGoal; }
+function syncDietProfileInputs(){
+  const ae=document.activeElement; if(ae&&['youW','youH','youAge'].indexOf(ae.id)>=0) return;
+  const g=state.dietGoal; const arr=(state.bodyweight||[]).slice().sort((a,b)=>a.d<b.d?-1:(a.d>b.d?1:0));
+  document.getElementById('youWUnit').textContent=state.unit;
+  document.getElementById('youW').value = g&&g.wDisp!=null ? g.wDisp : (arr.length?arr[arr.length-1].w:'');
+  document.getElementById('youH').value = g&&g.h!=null ? g.h : '';
+  document.getElementById('youAge').value = g&&g.age!=null ? g.age : '';
+  paintSeg('youSex', g&&g.sex?g.sex:'m');
+  document.getElementById('youAct').value = (g&&g.act)? g.act : ACT_DEFAULT;
+  paintSeg('youGoal', g&&g.goal?g.goal:'maintain');
+}
+function recomputeDietGoal(){
+  const g=ensureDietGoal();
+  g.wDisp=dnum(document.getElementById('youW').value);
+  g.h=dnum(document.getElementById('youH').value);
+  g.age=dnum(document.getElementById('youAge').value);
+  const sb=document.querySelector('#youSex button.on'); g.sex=sb?sb.dataset.v:'m';
+  g.act=parseFloat(document.getElementById('youAct').value)||ACT_DEFAULT;
+  const gb=document.querySelector('#youGoal button.on'); g.goal=gb?gb.dataset.v:'maintain';
+  g.manual=false;
+  const kg = g.wDisp==null?null:(state.unit==='lb'? g.wDisp/2.20462 : g.wDisp);
+  g.t = (kg!=null && g.h!=null && g.age!=null) ? computeTargets({kg:kg,h:g.h,age:g.age,sex:g.sex,act:g.act,goal:g.goal}) : null;
+  save(); renderDietBar();
+}
+function updateWater(g){
+  const day=getDietDay(dietDate); const wGoal=(g&&g.t)?g.t.water:0;
+  document.getElementById('waterNow').textContent=day.water||0;
+  document.getElementById('waterGoal').textContent=wGoal||'—';
+  document.getElementById('waterFill').style.width=barPct(day.water||0,wGoal||1)+'%';
+}
+function renderDietBar(){
+  const tot=dayTotals(dietDate); const g=state.dietGoal; const bar=document.getElementById('dietBar');
+  const ro = dietDate!==todayISO();
+  if(!g || !g.t){
+    bar.innerHTML='<div class="kcal-big">'+tot.kcal+' <span>kcal logged</span></div>'+
+      '<div class="diet-hint">Enter your weight, height and age above to get cut / maintain / bulk targets.</div>';
+    updateWater(g); return;
+  }
+  const t=g.t; const remK=t.kcal-tot.kcal; const kOver=remK<0;
+  let html='<div class="kcal-big">'+tot.kcal+' <span>/ '+t.kcal+' kcal</span></div>';
+  html+='<div class="macro-row"><span class="rem '+(kOver?'over':'ok')+'">'+(kOver?('over by '+Math.abs(remK)+' kcal'):(remK+' kcal left'))+'</span></div>';
+  html+='<div class="bar"><div class="bar-fill '+(kOver?'over':'')+'" style="width:'+barPct(tot.kcal,t.kcal)+'%"></div></div>';
+  [['Fat','f'],['Carbs','c'],['Protein','p']].forEach(function(rw){
+    const label=rw[0],key=rw[1],cv=tot[key],tv=t[key],rem=tv-cv,over=rem<0;
+    html+='<div class="macro-row"><span class="lbl">'+label+'</span><span class="val">'+cv+' / '+tv+' g <span class="rem '+(over?'over':'ok')+'">('+(over?('+'+Math.abs(rem)):(rem+' left'))+')</span></span></div>';
+    html+='<div class="bar"><div class="bar-fill '+key+(over?' over':'')+'" style="width:'+barPct(cv,tv)+'%"></div></div>';
   });
+  html+= ro?'':'<button class="edit-targets" id="editTargetsBtn">Edit targets</button>';
+  bar.innerHTML=html;
+  const etb=document.getElementById('editTargetsBtn'); if(etb) etb.onclick=openEditTargets;
+  updateWater(g);
 }
-function recalcGoal(){
-  const inp=currentGoalInputs();
-  if(inp.kg!=null && inp.h!=null && inp.age!=null){ renderGoalCalc(computeTargets(inp)); }
-  else{ document.getElementById('goalCalc').innerHTML='<div class="diet-hint">Enter weight, height and age to calculate targets — you can edit any number afterwards.</div>'; }
+function openEditTargets(){
+  const g=state.dietGoal; const t=(g&&g.t)?g.t:{kcal:0,p:0,c:0,f:0,water:0};
+  renderGoalCalc(t); goalOverlay.classList.add('show');
 }
-function openGoal(){
-  const g=state.dietGoal; const arr=(state.bodyweight||[]).slice().sort((a,b)=> a.d<b.d?-1:(a.d>b.d?1:0));
-  document.getElementById('goalWUnit').textContent=state.unit;
-  document.getElementById('gWeight').value = g&&g.wDisp!=null ? g.wDisp : (arr.length?arr[arr.length-1].w:'');
-  document.getElementById('gHeight').value = g&&g.h!=null ? g.h : '';
-  document.getElementById('gAge').value = g&&g.age!=null ? g.age : '';
-  goalSex = g&&g.sex ? g.sex : 'm'; goalGoal = g&&g.goal ? g.goal : 'maintain';
-  document.getElementById('gAct').value = g&&g.act ? g.act : ACT_DEFAULT;
-  paintSeg('gSex',goalSex); paintSeg('gGoal',goalGoal);
-  goalManual = g? !!g.manual : false;
-  if(g && g.t){ renderGoalCalc(g.t); } else { recalcGoal(); }
-  goalOverlay.classList.add('show');
-}
-document.querySelectorAll('#gSex button').forEach(b=>b.onclick=function(){ goalSex=b.dataset.v; paintSeg('gSex',goalSex); goalManual=false; recalcGoal(); });
-document.querySelectorAll('#gGoal button').forEach(b=>b.onclick=function(){ goalGoal=b.dataset.v; paintSeg('gGoal',goalGoal); goalManual=false; recalcGoal(); });
-['gWeight','gHeight','gAge'].forEach(id=>document.getElementById(id).addEventListener('input',function(){ if(!goalManual) recalcGoal(); }));
-document.getElementById('gAct').addEventListener('change',function(){ if(!goalManual) recalcGoal(); });
+['youW','youH','youAge'].forEach(id=>document.getElementById(id).addEventListener('input',recomputeDietGoal));
+document.getElementById('youAct').addEventListener('change',recomputeDietGoal);
+document.querySelectorAll('#youSex button').forEach(b=>b.onclick=function(){ paintSeg('youSex',b.dataset.v); recomputeDietGoal(); });
+document.querySelectorAll('#youGoal button').forEach(b=>b.onclick=function(){ paintSeg('youGoal',b.dataset.v); recomputeDietGoal(); });
 document.getElementById('goalCancel').onclick=()=>goalOverlay.classList.remove('show');
 goalOverlay.onclick=e=>{ if(e.target===goalOverlay) goalOverlay.classList.remove('show'); };
 document.getElementById('goalSave').onclick=function(){
-  const inp=currentGoalInputs();
+  const g=ensureDietGoal();
   const gv=id=>{ const el=document.getElementById(id); return el?dnum(el.value):null; };
-  const t={ kcal:gv('tKcal')||0, p:gv('tP')||0, c:gv('tC')||0, f:gv('tF')||0, water:gv('tWater')||0 };
-  if(!t.kcal){ alert('Enter your weight, height and age so targets can be calculated — or type the numbers in manually.'); return; }
-  state.dietGoal={ wDisp:inp.wDisp, h:inp.h, age:inp.age, sex:inp.sex, act:inp.act, goal:inp.goal, manual:goalManual, t:t };
-  save(); goalOverlay.classList.remove('show'); renderDiet();
+  g.t={ kcal:gv('tKcal')||0, p:gv('tP')||0, c:gv('tC')||0, f:gv('tF')||0, water:gv('tWater')||0 };
+  g.manual=true;
+  save(); goalOverlay.classList.remove('show'); renderDietBar();
 };
 
 /* ---- add-food: search, manual & online modals ---- */
