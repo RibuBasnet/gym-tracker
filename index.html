@@ -1102,7 +1102,7 @@ function detectActiveId(){
 // positions stay stable and logs never orphan. To be folded into the library later.
 function hybridFixups(r){
   if(!Array.isArray(r)) return;
-  const REMOVE={'Overhead press':1,'Lateral raises':1,'Barbell row':1};
+  const REMOVE={'Overhead press':1,'Lateral raises':1,'Barbell row':1,'Leg curl':1,'Leg extension':1};
   r.forEach(function(d){
     if(!Array.isArray(d.ex)) return;
     d.ex=d.ex.filter(function(e){ return !REMOVE[e.n]; });
@@ -1113,6 +1113,10 @@ function hybridFixups(r){
       if(e.n==='Face pulls') e.n='Lat pullover';
       if(e.n==='Barbell / EZ-bar curl') e.n='Barbell curl 21s';
       if(e.n==='Barbell curl 21s') e.s='3 × 21';
+      if(e.n==='Cable crunch') e.n='Toe touch crunches';
+      if(e.n==='Russian twists') e.n='Left-side toe touch crunches';
+      if(e.n==='Plank') e.n='Right-side toe touch crunches';
+      if(e.n==='Right-side toe touch crunches') e.s='3 × 10';
       const g=HOWTO[e.n]; if(g){ e.m=g.m; e.h=g.h; }
     });
     if(d.key==='tue' && !d.ex.some(function(e){ return e.n==='Seated Arnold press'; })){
@@ -1188,6 +1192,9 @@ const HOWTO = {
   'Cable crunch':{m:'Upper abs',h:'Kneel facing a high cable with a rope behind your head. Crunch down by curling your ribs toward your hips — round your spine rather than just bowing at the hips. Squeeze, then rise slowly. Add weight to progress.'},
   'Russian twists':{m:'Obliques',h:'Sit with knees bent, leaning back slightly (heels down or lifted for more challenge). Rotate your torso to tap the floor or a weight beside each hip, alternating sides. Count each side as a rep and move under control — rotate from the core, not just the arms.'},
   'Plank':{m:'Deep core, anti-extension',h:'On your forearms and toes, hold a straight line from head to heels with your core and glutes braced — no sagging or piking of the hips. Hold for time, and log the number of seconds you held in the reps box.'},
+  'Toe touch crunches':{m:'Abs',h:'Lie on your back with your legs raised straight toward the ceiling. Crunch your upper back off the floor and reach both hands up to touch your toes, then lower under control. Keep your legs still and lead with your shoulder blades — do not pull on your neck.'},
+  'Left-side toe touch crunches':{m:'Abs, obliques',h:'Lie on your back with your legs raised. Crunch up and reach both hands across toward your left foot, twisting slightly to load the left obliques, then lower under control. Keep it slow and squeeze at the top.'},
+  'Right-side toe touch crunches':{m:'Abs, obliques',h:'Lie on your back with your legs raised. Crunch up and reach both hands across toward your right foot, twisting slightly to load the right obliques, then lower under control. Keep it slow and squeeze at the top.'},
   'Bulgarian split squats':{m:'Quads, glutes (single-leg)',h:'Stand a stride in front of a bench and rest the top of your back foot on it. Lower straight down by bending your front knee until your front thigh is about parallel, keeping your torso tall, then drive up through your front heel. Finish all reps on one leg before switching. Hold dumbbells to add load.'},
   'Pistol squats':{m:'Quads, glutes, balance',h:'Stand on one leg with the other extended straight out in front. Sit back and down on the standing leg as far as you can control, keeping the free leg off the floor, then stand back up. Very demanding — scale it by squatting to a box or bench, holding a support, or doing assisted reps until you build the strength and mobility.'},
   'Nordic hamstring curls':{m:'Hamstrings (eccentric)',h:'Kneel on a pad with your ankles anchored under something solid or held by a partner. Keeping your hips straight and body rigid from knees to head, lower yourself forward as slowly as you can using your hamstrings, then push off your hands to help back up. Extremely hard — start with a very short range or band assistance and build up.'},
