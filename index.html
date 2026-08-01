@@ -282,7 +282,10 @@
   .routine-name-bar .rn-input.need{border-color:var(--accent);}
   body.editing .tabs{display:none;}
   .ex-search{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 13px;color:var(--ink);font-size:14px;font-family:inherit;margin-bottom:12px;}
-  .ex-picker-list{max-height:48vh;overflow-y:auto;}
+  .ex-picker-list{max-height:44vh;overflow-y:auto;}
+  .ex-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .ex-chip{background:var(--bg);border:1px solid var(--line);color:var(--muted);border-radius:14px;padding:4px 11px;font-size:11px;letter-spacing:.03em;cursor:pointer;text-transform:uppercase;font-family:"Oswald",sans-serif;font-weight:600;}
+  .ex-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
   .restore-btn:hover{color:var(--accent);}
   .day-edit-head{display:flex;align-items:center;gap:10px;padding:14px;}
   .de-name{font-family:"Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.14em;
@@ -714,6 +717,8 @@
       <h2>Add an exercise</h2>
       <p>Pick one to fill in its target &amp; guide automatically, or add your own.</p>
       <input id="exPickerSearch" class="ex-search" type="text" placeholder="Search exercises…" autocomplete="off">
+      <div class="ex-chips" id="exCatChips"></div>
+      <div class="ex-chips" id="exEqChips"></div>
       <div class="pick-list ex-picker-list" id="exPickerList"></div>
       <div class="modal-actions">
         <button id="exPickerCancel">Cancel</button>
@@ -1207,6 +1212,49 @@ const HOWTO = {
   'Bicycle crunches':{m:'Abs, obliques',h:'Lie on your back, hands lightly behind your head, legs lifted. Bring one knee toward your chest while rotating the opposite elbow toward it, extending the other leg out, then alternate in a smooth pedaling motion. Move with control and rotate from the trunk rather than pulling on your neck.'},
   'Hollow body hold':{m:'Deep core, anti-extension',h:'Lie on your back and press your lower back into the floor. Lift your shoulders and legs off the ground so your body forms a shallow banana shape, arms reaching overhead. Hold this tight position for time. Make it easier by bending your knees or keeping your arms by your sides. Log the seconds you held in the reps box.'},
 };
+
+// ---------- Structured exercise catalog (data model for the library) ----------
+function slug(x){ return String(x).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+const EQ_LABEL={bodyweight:'Bodyweight',dumbbell:'Dumbbell',barbell:'Barbell',cable:'Cable',machine:'Machine',band:'Band'};
+// name -> [category, equipment, defaultMode]
+const EXMETA={
+'Standard push-ups':['Chest','bodyweight','bodyweight'],'Diamond push-ups':['Arms','bodyweight','bodyweight'],
+'Wide push-ups':['Chest','bodyweight','bodyweight'],'Incline push-ups':['Chest','bodyweight','bodyweight'],
+'Decline push-ups':['Chest','bodyweight','bodyweight'],'Pike push-ups':['Shoulders','bodyweight','bodyweight'],
+'Hindu push-ups':['Chest','bodyweight','bodyweight'],'Reverse-grip push-ups':['Chest','bodyweight','bodyweight'],
+'Palms-up push-ups':['Chest','bodyweight','bodyweight'],'Dips':['Chest','bodyweight','bodyweight'],
+'Barbell bench press':['Chest','barbell','weight'],'Decline barbell bench press':['Chest','barbell','weight'],
+'Incline dumbbell press':['Chest','dumbbell','weight'],'Seated Arnold press':['Shoulders','dumbbell','weight'],
+'Seated rear delt fly':['Shoulders','dumbbell','weight'],'Overhead press':['Shoulders','barbell','weight'],
+'Lateral raises':['Shoulders','dumbbell','weight'],'Cable fly':['Chest','cable','weight'],
+'Dumbbell chest fly':['Chest','dumbbell','weight'],'Triceps pushdown':['Arms','cable','weight'],
+'Barbell row':['Back','barbell','weight'],'Bent-over barbell row':['Back','barbell','weight'],
+'Lat pulldown':['Back','cable','weight'],'Seated cable row':['Back','cable','weight'],
+'Face pulls':['Shoulders','cable','weight'],'Lat pullover':['Back','dumbbell','weight'],
+'Barbell / EZ-bar curl':['Arms','barbell','weight'],'Barbell curl 21s':['Arms','barbell','weight'],
+'Hammer curl':['Arms','dumbbell','weight'],'Incline dumbbell curl':['Arms','dumbbell','weight'],
+'Standard pull-ups (pronated)':['Back','bodyweight','bodyweight'],'Chin-ups (supinated)':['Back','bodyweight','bodyweight'],
+'Neutral-grip pull-ups':['Back','bodyweight','bodyweight'],'Wide-grip pull-ups':['Back','bodyweight','bodyweight'],
+'Inverted rows':['Back','bodyweight','bodyweight'],'Scapular pull-ups / negatives':['Back','bodyweight','bodyweight'],
+'Squat':['Legs','barbell','weight'],'Romanian deadlift':['Legs','barbell','weight'],
+'Leg press':['Legs','machine','weight'],'Leg curl':['Legs','machine','weight'],
+'Leg extension':['Legs','machine','weight'],'Standing calf raise':['Legs','machine','weight'],
+'Hanging leg raises':['Core','bodyweight','bodyweight'],'Cable crunch':['Core','cable','weight'],
+'Russian twists':['Core','bodyweight','bodyweight'],'Plank':['Core','bodyweight','bodyweight'],
+'Toe touch crunches':['Core','bodyweight','bodyweight'],'Left-side toe touch crunches':['Core','bodyweight','bodyweight'],
+'Right-side toe touch crunches':['Core','bodyweight','bodyweight'],'Bulgarian split squats':['Legs','bodyweight','bodyweight'],
+'Pistol squats':['Legs','bodyweight','bodyweight'],'Nordic hamstring curls':['Legs','bodyweight','bodyweight'],
+'Single-leg glute bridge':['Legs','bodyweight','bodyweight'],'Single-leg calf raise':['Legs','bodyweight','bodyweight'],
+'Cable woodchopper':['Core','cable','weight'],'Weighted hanging leg raises':['Core','bodyweight','weight'],
+'Weighted Russian twists':['Core','dumbbell','weight'],'Toes-to-bar':['Core','bodyweight','bodyweight'],
+'Bicycle crunches':['Core','bodyweight','bodyweight'],'Hollow body hold':['Core','bodyweight','bodyweight']
+};
+const EX_CATS=['Chest','Back','Shoulders','Arms','Legs','Core'];
+const EX_EQS=['bodyweight','dumbbell','barbell','cable','machine','band'];
+const EXERCISES = Object.keys(HOWTO).map(function(name){
+  const m=EXMETA[name]||['Other','other','bodyweight']; const g=HOWTO[name]||{};
+  return { id:slug(name), name:name, category:m[0], equipment:m[1], mode:m[2], target:g.m||'', guide:g.h||'', clip:g.clip||'' };
+});
 
 const STORE_KEY = 'gym-tracker-state';
 let state = { weekId:'', checks:{}, logs:{}, unit:'kg', history:{}, bodyweight:[], routine:null, defaultRoutine:null, foods:[], diet:{}, dietGoal:null };
@@ -1925,7 +1973,15 @@ factoryOverlay.onclick=e=>{ if(e.target===factoryOverlay) factoryOverlay.classLi
 // ---- Exercise picker (fills target & guide from the library; or add a custom one) ----
 const exPickerOverlay=document.getElementById('exPickerOverlay');
 let exPickerDayKey=null;
-function openExPicker(dayKey){ exPickerDayKey=dayKey; document.getElementById('exPickerSearch').value=''; renderExPicker(''); exPickerOverlay.classList.add('show'); }
+let exFilterCat='all', exFilterEq='all';
+function openExPicker(dayKey){ exPickerDayKey=dayKey; exFilterCat='all'; exFilterEq='all'; document.getElementById('exPickerSearch').value=''; renderExChips(); renderExPicker(''); exPickerOverlay.classList.add('show'); }
+function renderExChips(){
+  const build=(box, items, cur, set)=>{ box.innerHTML='';
+    items.forEach(function(it){ const b=document.createElement('button'); b.className='ex-chip'+(cur===it[0]?' on':''); b.textContent=it[1];
+      b.onclick=function(){ set(it[0]); renderExChips(); renderExPicker(document.getElementById('exPickerSearch').value); }; box.appendChild(b); }); };
+  build(document.getElementById('exCatChips'), [['all','All']].concat(EX_CATS.map(c=>[c,c])), exFilterCat, v=>exFilterCat=v);
+  build(document.getElementById('exEqChips'), [['all','All']].concat(EX_EQS.map(e=>[e,EQ_LABEL[e]])), exFilterEq, v=>exFilterEq=v);
+}
 function addExerciseToDay(ex){ const day=ROUTINE.find(d=>d.key===exPickerDayKey); if(day){ day.ex.push(ex); } exPickerOverlay.classList.remove('show'); render(); }
 function renderExPicker(filter){
   const box=document.getElementById('exPickerList'); box.innerHTML='';
@@ -1933,13 +1989,19 @@ function renderExPicker(filter){
   custom.onclick=()=>addExerciseToDay({id:uid(), n:'New exercise', s:'3 × 10', m:'', h:''});
   box.appendChild(custom);
   const q=(filter||'').trim().toLowerCase();
-  Object.keys(HOWTO).filter(n=>!q||n.toLowerCase().indexOf(q)>=0||String(HOWTO[n].m||'').toLowerCase().indexOf(q)>=0).forEach(n=>{
-    const g=HOWTO[n]; const btn=document.createElement('button'); btn.className='pick-row';
-    btn.innerHTML='<span class="pick-name">'+escapeHtml(n)+'</span>'+(g.m?'<span class="pick-desc">'+escapeHtml(g.m)+'</span>':'');
-    btn.onclick=()=>addExerciseToDay({id:uid(), n:n, s:'3 × 10', m:g.m||'', h:g.h||''});
+  const list=EXERCISES.filter(function(e){
+    if(exFilterCat!=='all' && e.category!==exFilterCat) return false;
+    if(exFilterEq!=='all' && e.equipment!==exFilterEq) return false;
+    if(q && e.name.toLowerCase().indexOf(q)<0 && String(e.target).toLowerCase().indexOf(q)<0) return false;
+    return true;
+  }).sort(function(a,b){ return a.category<b.category?-1:(a.category>b.category?1:(a.name<b.name?-1:(a.name>b.name?1:0))); });
+  list.forEach(function(e){
+    const btn=document.createElement('button'); btn.className='pick-row';
+    btn.innerHTML='<span class="pick-name">'+escapeHtml(e.name)+'</span><span class="pick-desc">'+escapeHtml(e.category)+' · '+escapeHtml(EQ_LABEL[e.equipment]||e.equipment)+(e.target?(' · '+escapeHtml(e.target)):'')+'</span>';
+    btn.onclick=()=>addExerciseToDay({id:uid(), n:e.name, s:'3 × 10', m:e.target, h:e.guide});
     box.appendChild(btn);
   });
-  if(q && box.children.length===1){ const e=document.createElement('div'); e.className='pick-empty'; e.textContent='No match — use + Custom exercise above.'; box.appendChild(e); }
+  if(!list.length){ const el=document.createElement('div'); el.className='pick-empty'; el.textContent='No match — use + Custom exercise above.'; box.appendChild(el); }
 }
 document.getElementById('exPickerSearch').oninput=function(){ renderExPicker(this.value); };
 document.getElementById('exPickerCancel').onclick=()=>exPickerOverlay.classList.remove('show');
