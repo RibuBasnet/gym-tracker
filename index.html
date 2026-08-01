@@ -447,7 +447,9 @@
   .goal-form{display:flex;flex-direction:column;gap:12px;}
   .goal-form>label{display:flex;flex-direction:column;gap:5px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
   .you-row{display:flex;gap:10px;}
-  .you-row>label{flex:1;display:flex;flex-direction:column;gap:5px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .you-row>label{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);}
+  .you-row>label .fl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .you-row input{width:100%;min-width:0;}
   #dietYou .goal-seg{margin-top:12px;}
   .you-actlabel{display:flex;flex-direction:column;gap:5px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
   .you-actlabel select{background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:11px;font-family:inherit;font-size:14px;}
@@ -532,9 +534,9 @@
       <div class="board-label">YOU</div>
       <div class="goal-form">
         <div class="you-row">
-          <label>Weight (<span id="youWUnit">kg</span>)<input id="youW" type="text" inputmode="decimal"></label>
-          <label>Height (cm)<input id="youH" type="text" inputmode="decimal"></label>
-          <label>Age<input id="youAge" type="text" inputmode="numeric"></label>
+          <label><span class="fl">Weight (<span id="youWUnit">kg</span>)</span><input id="youW" type="text" inputmode="decimal"></label>
+          <label><span class="fl">Height (cm)</span><input id="youH" type="text" inputmode="decimal"></label>
+          <label><span class="fl">Age</span><input id="youAge" type="text" inputmode="numeric"></label>
         </div>
         <div class="goal-seg" id="youSex"><button data-v="m" class="on">Male</button><button data-v="f">Female</button></div>
       </div>
