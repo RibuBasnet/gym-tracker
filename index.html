@@ -56,8 +56,10 @@
   }
   .board-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
   .board-label{font-size:11px;letter-spacing:.2em;color:var(--ink);font-weight:700;margin-bottom:12px;}
-  .ayt-head{font-family:"Oswald",sans-serif;font-weight:700;font-size:22px;letter-spacing:.01em;color:var(--ink);margin-bottom:12px;}
-  .ayt-head sup{color:var(--accent);font-size:.6em;}
+  .ayt-banner{font-family:"Oswald",sans-serif;font-weight:700;font-size:34px;line-height:1;letter-spacing:.01em;color:var(--ink);margin-top:2px;}
+  .ayt-banner sup{color:var(--accent);font-size:.55em;}
+  .ayt-bannersub{font-family:"Oswald",sans-serif;text-transform:uppercase;font-weight:600;font-size:11px;letter-spacing:.18em;color:var(--muted);margin:6px 0 2px;}
+  .tab sup{font-size:.65em;color:#fff;}
   .bw-rate{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink);margin-top:10px;}
   .aweek-label{font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin:18px 0 6px;border-top:1px solid var(--line);padding-top:14px;}
   .dw-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;}
@@ -514,7 +516,7 @@
   <div class="tabs">
     <button class="tab on" data-v="train">Train</button>
     <button class="tab" data-v="diet">Diet</button>
-    <button class="tab" data-v="progress">Progress</button>
+    <button class="tab" data-v="progress">Are You<sup>2</sup></button>
   </div>
 
   <div id="trainView">
@@ -605,16 +607,9 @@
   </div>
 
   <div id="progressView" hidden>
+    <div class="ayt-banner">Are You<sup>2</sup></div>
+    <div class="ayt-bannersub">body &amp; lifts progress</div>
     <div class="pcard">
-      <div class="board-label">LIFT PROGRESS</div>
-      <select class="lift-select" id="liftSelect"></select>
-      <div class="lift-toggle"><button class="lt-btn on" data-m="top">Top set</button><button class="lt-btn" data-m="volume">Volume</button></div>
-      <div class="lift-stats" id="liftStats"></div>
-      <div class="chart" id="liftChart"></div>
-    </div>
-
-    <div class="pcard">
-      <div class="ayt-head">Are You<sup>2</sup></div>
       <div class="bw-current"><span id="bwNow">—</span><span class="bw-unit" id="bwUnit">kg</span></div>
       <div class="bw-change" id="bwChange"></div>
 
@@ -629,6 +624,14 @@
       <div class="dw-row" id="dietWeekCals"></div>
       <div class="dw-row" id="dietWeekProtein"></div>
       <div class="diet-hint">Weight comes from “Your stats” on the Diet tab; calories &amp; protein from your food log.</div>
+    </div>
+
+    <div class="pcard">
+      <div class="board-label">LIFT PROGRESS</div>
+      <select class="lift-select" id="liftSelect"></select>
+      <div class="lift-toggle"><button class="lt-btn on" data-m="top">Top set</button><button class="lt-btn" data-m="volume">Volume</button></div>
+      <div class="lift-stats" id="liftStats"></div>
+      <div class="chart" id="liftChart"></div>
     </div>
 
     <div class="pcard">
