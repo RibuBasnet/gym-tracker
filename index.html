@@ -56,6 +56,14 @@
   }
   .board-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
   .board-label{font-size:11px;letter-spacing:.2em;color:var(--ink);font-weight:700;margin-bottom:12px;}
+  .ayt-head{font-family:"Oswald",sans-serif;font-weight:700;font-size:22px;letter-spacing:.01em;color:var(--ink);margin-bottom:12px;}
+  .ayt-head sup{color:var(--accent);font-size:.6em;}
+  .bw-rate{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink);margin-top:10px;}
+  .aweek-label{font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin:18px 0 6px;border-top:1px solid var(--line);padding-top:14px;}
+  .dw-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;}
+  .dw-row .dw-lbl{color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:11px;}
+  .dw-row .dw-val{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink);}
+  .dw-val.muted{color:var(--muted);}
   .tally{font-family:"Oswald",sans-serif;font-weight:700;font-size:24px;line-height:1;}
   .tally span{color:var(--muted);font-size:16px;}
   .week{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;}
@@ -606,15 +614,21 @@
     </div>
 
     <div class="pcard">
-      <div class="board-label">BODY WEIGHT</div>
+      <div class="ayt-head">Are You<sup>2</sup></div>
       <div class="bw-current"><span id="bwNow">—</span><span class="bw-unit" id="bwUnit">kg</span></div>
       <div class="bw-change" id="bwChange"></div>
 
       <div class="chart-block">
-        <div class="chart-title">Weight trend</div>
+        <div class="chart-title">Weight</div>
+        <div class="legend" id="bodyLegend"></div>
         <div class="chart" id="bodyChart"></div>
       </div>
-      <div class="diet-hint">Weight comes from “Your stats” on the Diet tab — update it there and the trend shows here.</div>
+      <div class="bw-rate" id="bwRate"></div>
+
+      <div class="aweek-label">This week · last 7 days</div>
+      <div class="dw-row" id="dietWeekCals"></div>
+      <div class="dw-row" id="dietWeekProtein"></div>
+      <div class="diet-hint">Weight comes from “Your stats” on the Diet tab; calories &amp; protein from your food log.</div>
     </div>
 
     <div class="pcard">
@@ -1696,10 +1710,32 @@ function renderProgress(){
   const chg=document.getElementById('bwChange');
   if(arr.length>=2){ const d=+(now.w-arr[arr.length-2].w).toFixed(1);
     if(d===0) chg.textContent='no change since last entry';
-    else chg.innerHTML='<span class="'+(d>0?'up':'down')+'">'+(d>0?'▲ +':'▼ ')+d+' '+state.unit+'</span> since last entry';
+    else chg.innerHTML='<span class="'+(d>0?'up':'down')+'">'+(d>0?'\u25B2 +':'\u25BC ')+d+' '+state.unit+'</span> since last entry';
   } else chg.textContent= arr.length? 'first entry logged' : 'add your weight on the Diet tab to start tracking';
-  document.getElementById('bodyChart').innerHTML=
-    lineChartSVG(arr.map(e=>({x:fmtWeek(e.d), y:(+e.w||0)})), '#4FC3F7', 'Update your weight on the Diet tab and your trend shows here.');
+  const bw=(v)=>{ const n=parseFloat(v); return isNaN(n)?null:n; };
+  const rawS=arr.map(e=>bw(e.w));
+  const avgS=arr.map(function(e){ const lo=isoShift(e.d,-6); const vs=arr.filter(x=>x.d>=lo&&x.d<=e.d).map(x=>bw(x.w)).filter(v=>v!=null); return vs.length? Math.round(vs.reduce((a,b)=>a+b,0)/vs.length*10)/10 : null; });
+  const wSeries=[ {name:'weigh-ins',color:'#4FC3F7',values:rawS}, {name:'7-day avg',color:'#FF4438',values:avgS} ];
+  document.getElementById('bodyChart').innerHTML=multiLineSVG(arr.map(e=>fmtWeek(e.d)), wSeries, 'Update your weight on the Diet tab and your trend shows here.');
+  document.getElementById('bodyLegend').innerHTML = arr.length? wSeries.map(sr=>'<span class="lg"><i style="background:'+sr.color+'"></i>'+sr.name+'</span>').join('') : '';
+  const today=todayISO();
+  const winAvg=(aa,bb)=>{ const lo=isoShift(today,-aa), hi=isoShift(today,-bb); const vs=arr.filter(e=>e.d>=lo&&e.d<=hi).map(e=>bw(e.w)).filter(v=>v!=null); return vs.length? vs.reduce((x,y)=>x+y,0)/vs.length : null; };
+  const recentAvg=winAvg(6,0), priorAvg=winAvg(13,7);
+  const rateEl=document.getElementById('bwRate');
+  if(recentAvg!=null && priorAvg!=null){ const rate=Math.round((recentAvg-priorAvg)*10)/10; rateEl.innerHTML='<b>'+(rate>0?'+':'')+rate+' '+state.unit+' / week</b> <span class="dw-val muted">(7-day avg)</span>'; }
+  else rateEl.innerHTML='<span class="dw-val muted">Log weigh-ins over a couple of weeks to see your weekly rate.</span>';
+  const tgt=(state.dietGoal&&state.dietGoal.t)?state.dietGoal.t:null;
+  let net=0, loggedDays=0, protHit=0, protDays=0;
+  for(let i=0;i<7;i++){ const d=isoShift(today,-i); const tt=dayTotals(d); if(tt.kcal>0){ loggedDays++;
+    if(tgt&&tgt.kcal) net += (tt.kcal - tgt.kcal);
+    if(tgt&&tgt.p){ protDays++; if(tt.p>=tgt.p) protHit++; } } }
+  net=Math.round(net);
+  const calEl=document.getElementById('dietWeekCals');
+  if(tgt&&tgt.kcal&&loggedDays){ const kg=Math.round(net/7700*10)/10; calEl.innerHTML='<span class="dw-lbl">Calories</span><span class="dw-val">net '+(net>0?'+':'')+net+' kcal &middot; \u2248 '+(kg>0?'+':'')+kg+' '+state.unit+'</span>'; }
+  else calEl.innerHTML='<span class="dw-lbl">Calories</span><span class="dw-val muted">'+(tgt&&tgt.kcal?'log food to see balance':'set targets on the Diet tab')+'</span>';
+  const protEl=document.getElementById('dietWeekProtein');
+  if(tgt&&tgt.p&&protDays){ protEl.innerHTML='<span class="dw-lbl">Protein</span><span class="dw-val">'+protHit+' / '+protDays+' days on target</span>'; }
+  else protEl.innerHTML='<span class="dw-lbl">Protein</span><span class="dw-val muted">'+(tgt&&tgt.p?'log food to see protein':'set a protein target')+'</span>';
 
   const sel=document.getElementById('liftSelect');
   const prev=sel.value;
