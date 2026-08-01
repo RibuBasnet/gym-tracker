@@ -609,24 +609,12 @@
       <div class="board-label">BODY WEIGHT</div>
       <div class="bw-current"><span id="bwNow">—</span><span class="bw-unit" id="bwUnit">kg</span></div>
       <div class="bw-change" id="bwChange"></div>
-      <div class="bw-latest" id="bwLatest"></div>
 
       <div class="chart-block">
-        <div class="chart-title">Body composition chart</div>
-        <div class="legend" id="bodyLegend"></div>
+        <div class="chart-title">Weight trend</div>
         <div class="chart" id="bodyChart"></div>
       </div>
-
-      <div class="bw-add">
-        <input type="date" id="bwDate">
-        <div class="bw-fields">
-          <div class="set-field"><input id="bwInput" type="text" inputmode="decimal" placeholder="weight"><span class="unit" id="bwInUnit">kg</span></div>
-          <div class="set-field"><input id="bfInput" type="text" inputmode="decimal" placeholder="body fat"><span class="unit">%</span></div>
-          <div class="set-field"><input id="mmInput" type="text" inputmode="decimal" placeholder="muscle"><span class="unit">%</span></div>
-        </div>
-        <button class="add-set" id="bwAdd">Add entry</button>
-      </div>
-      <div class="bw-list" id="bwList"></div>
+      <div class="diet-hint">Weight comes from “Your stats” on the Diet tab — update it there and the trend shows here.</div>
     </div>
 
     <div class="pcard">
@@ -1703,61 +1691,15 @@ function renderLiftChart(id){
 function renderProgress(){
   const arr=(state.bodyweight||[]).slice().sort((a,b)=> a.d<b.d?-1:(a.d>b.d?1:0));
   document.getElementById('bwUnit').textContent=state.unit;
-  document.getElementById('bwInUnit').textContent=state.unit;
   const now=arr.length?arr[arr.length-1]:null;
   document.getElementById('bwNow').textContent= now? now.w : '—';
   const chg=document.getElementById('bwChange');
   if(arr.length>=2){ const d=+(now.w-arr[arr.length-2].w).toFixed(1);
     if(d===0) chg.textContent='no change since last entry';
     else chg.innerHTML='<span class="'+(d>0?'up':'down')+'">'+(d>0?'▲ +':'▼ ')+d+' '+state.unit+'</span> since last entry';
-  } else chg.textContent= arr.length? 'first entry logged' : 'add your weight to start tracking';
-
-  // latest body-composition readout
-  const latestLine=document.getElementById('bwLatest');
-  if(now && (now.bf!=null&&now.bf!=='' || now.mm!=null&&now.mm!=='')){
-    const parts=[];
-    if(now.bf!=null&&now.bf!=='') parts.push('Body fat <b>'+now.bf+'%</b>');
-    if(now.mm!=null&&now.mm!=='') parts.push('Muscle <b>'+now.mm+'%</b>');
-    latestLine.innerHTML=parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;');
-  } else latestLine.innerHTML='';
-
-  // combined body-composition chart (weight + fat% + muscle%)
-  const labels=arr.map(e=>fmtWeek(e.d));
-  const num=v=> (v==null||v==='')?null:(isNaN(parseFloat(v))?null:parseFloat(v));
-  const series=[
-    {name:'Weight ('+state.unit+')', color:'#4FC3F7', values:arr.map(e=>num(e.w))},
-    {name:'Body fat %', color:'#F5B301', values:arr.map(e=>num(e.bf))},
-    {name:'Muscle %', color:'#3BD16F', values:arr.map(e=>num(e.mm))},
-  ];
+  } else chg.textContent= arr.length? 'first entry logged' : 'add your weight on the Diet tab to start tracking';
   document.getElementById('bodyChart').innerHTML=
-    multiLineSVG(labels, series, 'Add a few weigh-ins and your trend lines show up here.');
-  // legend — only metrics that actually have data
-  const legend=document.getElementById('bodyLegend');
-  legend.innerHTML = series.filter(s=>s.values.some(v=>v!=null))
-    .map(s=>'<span class="lg"><i style="background:'+s.color+'"></i>'+s.name+'</span>').join('');
-
-  const list=document.getElementById('bwList'); list.innerHTML='';
-  arr.slice().reverse().forEach(e=>{
-    const row=document.createElement('div'); row.className='bw-row';
-    row.innerHTML=
-      '<div class="bw-rowtop"><span class="bw-d">'+fmtFull(e.d)+'</span><button class="del" aria-label="Delete entry">×</button></div>'+
-      '<div class="bw-vals">'+
-        '<label>Weight '+state.unit+'<input class="v-w" type="text" inputmode="decimal"></label>'+
-        '<label>Body fat %<input class="v-bf" type="text" inputmode="decimal"></label>'+
-        '<label>Muscle %<input class="v-mm" type="text" inputmode="decimal"></label>'+
-      '</div>';
-    const wIn=row.querySelector('.v-w'), bfIn=row.querySelector('.v-bf'), mmIn=row.querySelector('.v-mm');
-    wIn.value=e.w!=null?e.w:''; bfIn.value=e.bf!=null?e.bf:''; mmIn.value=e.mm!=null?e.mm:'';
-    const upd=()=>{ const t=state.bodyweight.find(x=>x.id===e.id); if(!t)return;
-      const w=parseFloat(wIn.value); if(!isNaN(w)) t.w=w;
-      t.bf = bfIn.value.trim()===''?'':(isNaN(parseFloat(bfIn.value))?t.bf:parseFloat(bfIn.value));
-      t.mm = mmIn.value.trim()===''?'':(isNaN(parseFloat(mmIn.value))?t.mm:parseFloat(mmIn.value));
-      save(); renderProgress();
-    };
-    wIn.onchange=upd; bfIn.onchange=upd; mmIn.onchange=upd;
-    row.querySelector('.del').onclick=()=>{ state.bodyweight=state.bodyweight.filter(x=>x.id!==e.id); save(); renderProgress(); };
-    list.appendChild(row);
-  });
+    lineChartSVG(arr.map(e=>({x:fmtWeek(e.d), y:(+e.w||0)})), '#4FC3F7', 'Update your weight on the Diet tab and your trend shows here.');
 
   const sel=document.getElementById('liftSelect');
   const prev=sel.value;
@@ -1790,19 +1732,6 @@ document.querySelectorAll('.tab').forEach(t=>{
 });
 
 // Body-weight add
-document.getElementById('bwAdd').onclick=()=>{
-  const dEl=document.getElementById('bwDate'), wEl=document.getElementById('bwInput');
-  const bfEl=document.getElementById('bfInput'), mmEl=document.getElementById('mmInput');
-  const d=dEl.value||todayISO(); const w=parseFloat(wEl.value);
-  if(isNaN(w)) return;
-  const bf=bfEl.value.trim()===''?'':parseFloat(bfEl.value);
-  const mm=mmEl.value.trim()===''?'':parseFloat(mmEl.value);
-  state.bodyweight=state.bodyweight||[];
-  const ex=state.bodyweight.find(x=>x.d===d);
-  if(ex){ ex.w=w; ex.bf=(bf===''||isNaN(bf))?'':bf; ex.mm=(mm===''||isNaN(mm))?'':mm; }
-  else state.bodyweight.push({id:Date.now()+'-'+Math.floor(Math.random()*9999), d, w, bf:(bf===''||isNaN(bf))?'':bf, mm:(mm===''||isNaN(mm))?'':mm});
-  wEl.value=''; bfEl.value=''; mmEl.value=''; save(); renderProgress();
-};
 
 // Lift selector
 document.getElementById('liftSelect').onchange=e=>renderLiftChart(e.target.value);
@@ -2370,6 +2299,14 @@ function openEditTargets(){
   renderGoalCalc(t); goalOverlay.classList.add('show');
 }
 ['youW','youH','youAge'].forEach(id=>document.getElementById(id).addEventListener('input',recomputeDietGoal));
+function logDietWeight(){
+  const w=dnum(document.getElementById('youW').value); if(w==null||w<=0) return;
+  state.bodyweight=state.bodyweight||[]; const d=todayISO();
+  const ex=state.bodyweight.find(x=>x.d===d);
+  if(ex){ ex.w=w; } else { state.bodyweight.push({id:Date.now()+'-'+Math.floor(Math.random()*9999), d:d, w:w}); }
+  save();
+}
+document.getElementById('youW').addEventListener('change',logDietWeight);
 document.getElementById('youAct').addEventListener('change',recomputeDietGoal);
 document.querySelectorAll('#youSex button').forEach(b=>b.onclick=function(){ paintSeg('youSex',b.dataset.v); recomputeDietGoal(); });
 document.querySelectorAll('#youGoal button').forEach(b=>b.onclick=function(){ paintSeg('youGoal',b.dataset.v); recomputeDietGoal(); });
@@ -2716,7 +2653,6 @@ document.getElementById('clearDayConfirm').onclick=function(){
 (async()=>{
   await load();
   openDays.add(todayKey());   // today expanded by default
-  document.getElementById('bwDate').value=todayISO();
   paintUnit();
   render();
   renderDiet();
